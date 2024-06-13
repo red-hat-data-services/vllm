@@ -226,6 +226,8 @@ spec:
         - $(params.build-args[*])
       - name: BUILD_ARGS_FILE
         value: $(params.build-args-file)
+      - name: PLATFORM
+        value: linux-fast/amd64
       runAfter:
       - prefetch-dependencies
       taskRef:
@@ -233,7 +235,7 @@ spec:
         - name: name
           value: buildah
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-buildah:0.1@sha256:0cb9100452e9640adbda75a6e23d2cc9c76d2408cbcf3183543b2a7582e39f02
+          value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote:0.1@sha256:04e44f7b59d04e99c39851495fcfd288c28127951851c8adcd1dc30617b78e23
         - name: kind
           value: task
         resolver: bundles
