@@ -17,6 +17,8 @@ metadata:
   name: vllm-on-push
   namespace: rhoai-tenant
 spec:
+  timeouts:
+    pipeline: 8h
   params:
   - name: git-url
     value: '{{source_url}}'
@@ -240,6 +242,7 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+      timeout: 6h
       when:
       - input: $(tasks.init.results.build)
         operator: in
