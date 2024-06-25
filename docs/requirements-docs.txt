@@ -11,3 +11,4 @@ torch
 py-cpuinfo
 transformers
 openai # Required by docs/source/serving/openai_compatible_server.md's vllm.entrypoints.openai.cli_args
+anyio>=4.4.0 # not directly required, pinned by Snyk to avoid a vulnerability
