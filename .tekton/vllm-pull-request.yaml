@@ -17,6 +17,8 @@ metadata:
   name: vllm-on-pull-request
   namespace: rhoai-tenant
 spec:
+  timeouts:
+    pipeline: 4h
   params:
   - name: git-url
     value: '{{source_url}}'
