@@ -7,7 +7,7 @@
 
 #################### BASE BUILD IMAGE ####################
 # prepare basic build environment
-FROM nvidia/cuda:12.4.1-devel-ubuntu22.04 AS dev
+FROM nvidia/cuda:12.5.1-devel-ubuntu22.04 AS dev
 
 RUN apt-get update -y \
     && apt-get install -y python3-pip git
@@ -89,7 +89,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 #################### vLLM installation IMAGE ####################
 # image with vLLM installed
-FROM nvidia/cuda:12.4.1-base-ubuntu22.04 AS vllm-base
+FROM nvidia/cuda:12.5.1-base-ubuntu22.04 AS vllm-base
 WORKDIR /vllm-workspace
 
 RUN apt-get update -y \
