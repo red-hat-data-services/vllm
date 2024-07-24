@@ -2,7 +2,7 @@
 # docs/source/dev/dockerfile-ubi/dockerfile-ubi.rst
 
 ## Global Args #################################################################
-ARG BASE_UBI_IMAGE_TAG=9.4
+ARG BASE_UBI_IMAGE_TAG=9.4-1194
 ARG PYTHON_VERSION=3.11
 
 ARG TORCH_CUDA_ARCH_LIST="7.0 7.5 8.0 8.6 8.9 9.0+PTX"
