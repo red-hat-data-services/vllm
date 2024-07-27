@@ -8,3 +8,4 @@ botocore
 ray >= 2.10.0
 peft
 pytest-asyncio
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
