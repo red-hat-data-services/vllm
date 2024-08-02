@@ -8,3 +8,10 @@ botocore
 ray >= 2.10.0
 peft
 pytest-asyncio
+numpy>=1.22.2 # not directly required, pinned by Snyk to avoid a vulnerability
+requests>=2.32.2 # not directly required, pinned by Snyk to avoid a vulnerability
+setuptools>=70.0.0 # not directly required, pinned by Snyk to avoid a vulnerability
+torch>=2.2.0 # not directly required, pinned by Snyk to avoid a vulnerability
+transformers>=4.38.0 # not directly required, pinned by Snyk to avoid a vulnerability
+wheel>=0.38.0 # not directly required, pinned by Snyk to avoid a vulnerability
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
