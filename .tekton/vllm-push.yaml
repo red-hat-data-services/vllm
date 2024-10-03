@@ -230,7 +230,7 @@ spec:
       - name: BUILD_ARGS_FILE
         value: $(params.build-args-file)
       - name: PLATFORM
-        value: linux-m8xlarge/amd64
+        value: linux-fast/amd64
       runAfter:
       - prefetch-dependencies
       taskRef:
