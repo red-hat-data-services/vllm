@@ -101,7 +101,7 @@ ARG vllm_fa_cmake_gpu_arches
 ENV VLLM_FA_CMAKE_GPU_ARCHES=${vllm_fa_cmake_gpu_arches}
 
 # max jobs used by Ninja to build extensions
-ARG max_jobs=10
+ARG max_jobs=27
 ENV MAX_JOBS=${max_jobs}
 # number of threads used by nvcc
 ARG nvcc_threads=8

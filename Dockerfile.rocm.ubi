@@ -3,7 +3,7 @@ ARG BASE_UBI_IMAGE_TAG=9.4
 ARG PYTHON_VERSION=3.12
 # Default ROCm ARCHes to build vLLM for.
 ARG PYTORCH_ROCM_ARCH="gfx908;gfx90a;gfx942;gfx1100"
-ARG MAX_JOBS=12
+ARG MAX_JOBS=25
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:${BASE_UBI_IMAGE_TAG} AS base
 
