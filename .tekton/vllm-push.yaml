@@ -32,15 +32,13 @@ spec:
     value: Dockerfile.ubi
   taskRunSpecs:
     - pipelineTaskName: ecosystem-cert-preflight-checks
-      stepSpecs:
-        - name: build
-          computeResources:
-            requests:
-              cpu: '2'
-              memory: 10Gi
-            limits:
-              cpu: '4'
-              memory: 20Gi
+      computeResources:
+        requests:
+          cpu: '2'
+          memory: 10Gi
+        limits:
+          cpu: '4'
+          memory: 20Gi
   pipelineSpec:
     finally:
     - name: show-sbom
