@@ -30,6 +30,17 @@ spec:
     value: quay.io/redhat-user-workloads/rhoai-tenant/vllm/vllm:{{revision}}
   - name: dockerfile
     value: Dockerfile.ubi
+  taskRunSpecs:
+    - pipelineTaskName: ecosystem-cert-preflight-checks
+      stepSpecs:
+        - name: build
+          computeResources:
+            requests:
+              cpu: '2'
+              memory: 10Gi
+            limits:
+              cpu: '4'
+              memory: 20Gi
   pipelineSpec:
     finally:
     - name: show-sbom
