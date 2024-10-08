@@ -1,6 +1,5 @@
 apiVersion: tekton.dev/v1
 kind: PipelineRun
-# test
 metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/red-hat-data-services/vllm?rev={{revision}}
@@ -203,6 +202,7 @@ spec:
       - name: netrc
         workspace: netrc
     - name: build-container
+      timeout: 5h
       params:
       - name: IMAGE
         value: $(params.output-image)
