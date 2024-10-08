@@ -37,8 +37,8 @@ spec:
           cpu: '2'
           memory: 10Gi
         limits:
-          cpu: '4'
-          memory: 20Gi
+          cpu: '8'
+          memory: 40Gi
   pipelineSpec:
     description: |
       This pipeline is ideal for building container images from a Containerfile while maintaining trust after pipeline customization.
