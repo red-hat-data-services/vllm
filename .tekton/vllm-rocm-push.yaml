@@ -19,6 +19,8 @@ metadata:
   name: vllm-rocm-on-push
   namespace: rhoai-tenant
 spec:
+  timeouts:
+    pipeline: 6h
   params:
   - name: git-url
     value: '{{source_url}}'
@@ -203,7 +205,7 @@ spec:
       - name: netrc
         workspace: netrc
     - name: build-container
-      timeout: 5h
+      timeout: 4h
       params:
       - name: IMAGE
         value: $(params.output-image)
@@ -348,6 +350,7 @@ spec:
         values:
         - "false"
     - name: ecosystem-cert-preflight-checks
+      timeout: 2h
       params:
       - name: image-url
         value: $(tasks.build-image-index.results.IMAGE_URL)
