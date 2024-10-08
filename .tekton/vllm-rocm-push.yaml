@@ -19,7 +19,7 @@ metadata:
   namespace: rhoai-tenant
 spec:
   timeouts:
-    pipeline: 6h
+    pipeline: 8h
   params:
   - name: git-url
     value: '{{source_url}}'
@@ -396,6 +396,7 @@ spec:
         values:
         - "false"
     - name: clamav-scan
+      timeout: 2h
       params:
       - name: image-digest
         value: $(tasks.build-image-index.results.IMAGE_DIGEST)
