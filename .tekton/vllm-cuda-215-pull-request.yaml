@@ -7,8 +7,9 @@ metadata:
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
+    # setting target branch to null to prevent unnecessary build trigger
     pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch
-      == "rhoai-2.15"
+      == "null"
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: vllm
@@ -28,6 +29,8 @@ spec:
     value: 5d
   - name: dockerfile
     value: Dockerfile.ubi
+  - name: path-context
+    value: .
   pipelineSpec:
     description: |
       This pipeline is ideal for building multi-arch container images from a Containerfile while maintaining trust after pipeline customization.
