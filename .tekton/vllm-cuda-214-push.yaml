@@ -165,6 +165,8 @@ spec:
         value: $(params.image-expires-after)
       - name: fetchTags
         value: "true"
+      - name: depth
+        value: "2147483647"
       runAfter:
       - init
       taskRef:
