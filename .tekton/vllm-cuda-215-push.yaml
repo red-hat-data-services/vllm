@@ -39,6 +39,14 @@ spec:
         limits:
           cpu: '4'
           memory: 20Gi
+    - pipelineTaskName: clair-scan
+      computeResources:
+        requests:
+          cpu: '2'
+          memory: 10Gi
+        limits:
+          cpu: '4'
+          memory: 20Gi
   pipelineSpec:
     description: |
       This pipeline is ideal for building multi-arch container images from a Containerfile while maintaining trust after pipeline customization.
@@ -163,6 +171,10 @@ spec:
         value: $(params.output-image).git
       - name: ociArtifactExpiresAfter
         value: $(params.image-expires-after)
+      - name: fetchTags
+        value: "true"
+      - name: depth
+        value: "2147483647"
       runAfter:
       - init
       taskRef:
