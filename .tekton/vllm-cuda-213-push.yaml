@@ -1,5 +1,6 @@
 apiVersion: tekton.dev/v1
 kind: PipelineRun
+# test
 metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/red-hat-data-services/vllm?rev={{revision}}
@@ -32,6 +33,14 @@ spec:
     value: .
   taskRunSpecs:
     - pipelineTaskName: ecosystem-cert-preflight-checks
+      computeResources:
+        requests:
+          cpu: '2'
+          memory: 10Gi
+        limits:
+          cpu: '4'
+          memory: 20Gi
+    - pipelineTaskName: clair-scan
       computeResources:
         requests:
           cpu: '2'
@@ -163,6 +172,10 @@ spec:
         value: $(params.output-image).git
       - name: ociArtifactExpiresAfter
         value: $(params.image-expires-after)
+      - name: fetchTags
+        value: "true"
+      - name: depth
+        value: "2147483647"
       runAfter:
       - init
       taskRef:
