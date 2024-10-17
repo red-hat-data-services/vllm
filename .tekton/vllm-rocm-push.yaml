@@ -1,6 +1,5 @@
 apiVersion: tekton.dev/v1
 kind: PipelineRun
-# tes
 metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/red-hat-data-services/vllm?rev={{revision}}
@@ -11,7 +10,7 @@ metadata:
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "push"
       && target_branch == "konflux"
-      && ( ".tekton/vllm-rocm-push.yaml".pathChanged() || !files.all.all(x, x.matches('^docs/|^.github/|\\.md$|^(?:.*/)?(?:\\.gitignore|OWNERS|PROJECT|LICENSE)$|^(?:.*\\/)?\\.github\\/.*$')) )
+      && ( !".tekton/**".pathChanged() || ".tekton/vllm-rocm-push.yaml".pathChanged() )
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: vllm
