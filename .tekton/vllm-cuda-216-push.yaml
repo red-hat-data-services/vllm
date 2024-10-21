@@ -6,8 +6,11 @@ metadata:
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch
-      == "rhoai-2.16"
+    build.appstudio.openshift.io/build-nudge-files: ".*.env, .*.json"
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      event == "push"
+      && target_branch == "rhoai-2.16"
+      && ( !".tekton/**".pathChanged() || ".tekton/vllm-cuda-216-push.yaml".pathChanged() )
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: vllm
@@ -22,9 +25,28 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/rhoai-tenant/vllm-cuda-216:{{revision}}
+    value: quay.io/modh/vllm:{{target_branch}}-cuda
   - name: dockerfile
-    value: Dockerfile
+    value: Dockerfile.ubi
+  - name: path-context
+    value: .
+  taskRunSpecs:
+    - pipelineTaskName: ecosystem-cert-preflight-checks
+      computeResources:
+        requests:
+          cpu: '2'
+          memory: 10Gi
+        limits:
+          cpu: '4'
+          memory: 20Gi
+    - pipelineTaskName: clair-scan
+      computeResources:
+        requests:
+          cpu: '2'
+          memory: 10Gi
+        limits:
+          cpu: '4'
+          memory: 20Gi
   pipelineSpec:
     description: |
       This pipeline is ideal for building multi-arch container images from a Containerfile while maintaining trust after pipeline customization.
@@ -94,7 +116,7 @@ spec:
       description: Add built image into an OCI image index
       name: build-image-index
       type: string
-    - default: []
+    - default: [max_jobs=48]
       description: Array of --build-arg values ("arg=value" strings) for buildah
       name: build-args
       type: array
@@ -103,8 +125,7 @@ spec:
       name: build-args-file
       type: string
     - default:
-      - linux/x86_64
-      - linux/arm64
+      - linux-extra-fast/amd64
       description: List of platforms to build the container images on. The available
         set of values is determined by the configuration of the multi-platform-controller.
       name: build-platforms
@@ -150,6 +171,10 @@ spec:
         value: $(params.output-image).git
       - name: ociArtifactExpiresAfter
         value: $(params.image-expires-after)
+      - name: fetchTags
+        value: "true"
+      - name: depth
+        value: "2147483647"
       runAfter:
       - init
       taskRef:
@@ -416,6 +441,9 @@ spec:
       params:
       - name: IMAGE
         value: $(tasks.build-image-index.results.IMAGE_URL)
+      - name: ADDITIONAL_TAGS
+        value:
+          - '{{target_branch}}-cuda-{{revision}}'
       runAfter:
       - build-image-index
       taskRef:
