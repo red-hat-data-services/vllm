@@ -6,8 +6,11 @@ metadata:
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch
-      == "konflux"
+    build.appstudio.openshift.io/build-nudge-files: "config/base/params-vllm-gaudi.env"
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      event == "push"
+      && target_branch == "konflux"
+      && ( !".tekton/**".pathChanged() || ".tekton/vllm-gaudi-test-push.yaml".pathChanged() )
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: vllm
@@ -27,6 +30,23 @@ spec:
     value: Dockerfile.hpu.ubi
   - name: path-context
     value: .
+  taskRunSpecs:
+    - pipelineTaskName: ecosystem-cert-preflight-checks
+      computeResources:
+        requests:
+          cpu: '8'
+          memory: 16Gi
+        limits:
+          cpu: '16'
+          memory: 32Gi
+    - pipelineTaskName: clair-scan
+      computeResources:
+        requests:
+          cpu: '8'
+          memory: 16Gi
+        limits:
+          cpu: '16'
+          memory: 32Gi
   pipelineSpec:
     description: |
       This pipeline is ideal for building multi-arch container images from a Containerfile while maintaining trust after pipeline customization.
@@ -96,7 +116,7 @@ spec:
       description: Add built image into an OCI image index
       name: build-image-index
       type: string
-    - default: []
+    - default: [max_jobs=48]
       description: Array of --build-arg values ("arg=value" strings) for buildah
       name: build-args
       type: array
@@ -105,7 +125,7 @@ spec:
       name: build-args-file
       type: string
     - default:
-      - linux/x86_64
+      - linux-extra-fast/amd64
       description: List of platforms to build the container images on. The available
         set of values is determined by the configuration of the multi-platform-controller.
       name: build-platforms
@@ -151,6 +171,10 @@ spec:
         value: $(params.output-image).git
       - name: ociArtifactExpiresAfter
         value: $(params.image-expires-after)
+      - name: fetchTags
+        value: "true"
+      - name: depth
+        value: "2147483647"
       runAfter:
       - init
       taskRef:
@@ -417,6 +441,9 @@ spec:
       params:
       - name: IMAGE
         value: $(tasks.build-image-index.results.IMAGE_URL)
+      - name: ADDITIONAL_TAGS
+        value:
+          - '{{target_branch}}-gaudi-{{revision}}'
       runAfter:
       - build-image-index
       taskRef:
