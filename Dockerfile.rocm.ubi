@@ -19,15 +19,18 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     python${PYTHON_VERSION}-pip \
     python${PYTHON_VERSION}-wheel && \
     python${PYTHON_VERSION} -m venv $VIRTUAL_ENV && \
-    pip install -U pip wheel setuptools uv
+    pip install -U pip wheel setuptools uv && \
+ microdnf clean all
 
 
 FROM base AS rocm_base
-ENV ROCM_VERSION=6.1.2
+ARG ROCM_VERSION=6.2.4
+ARG PYTHON_VERSION
+ARG BASE_UBI_IMAGE_TAG
 
 RUN printf "[amdgpu]\n\
 name=amdgpu\n\
-baseurl=https://repo.radeon.com/amdgpu/${ROCM_VERSION}/rhel/9.4/main/x86_64/\n\
+baseurl=https://repo.radeon.com/amdgpu/${ROCM_VERSION}/rhel/${BASE_UBI_IMAGE_TAG}/main/x86_64/\n\
 enabled=1\n\
 priority=50\n\
 gpgcheck=1\n\
@@ -41,16 +44,25 @@ gpgcheck=1\n\
 gpgkey=https://repo.radeon.com/rocm/rocm.gpg.key" > /etc/yum.repos.d/amdgpu.repo
 
 
-RUN microdnf -y install \
-        rocm-hip-libraries rocm-hip-runtime \
-        miopen-hip && \
-    microdnf clean all
-
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
-    uv pip install -v --index-url "https://download.pytorch.org/whl/nightly/rocm6.1" \
-        torch==2.5.0.dev20240912+rocm6.1 \
-        torchvision==0.20.0.dev20240912+rocm6.1
+    export version="$(awk -F. '{print $1"."$2}' <<< $ROCM_VERSION)" && \
+    uv pip install --pre \
+        --index-url "https://download.pytorch.org/whl/nightly/rocm${version}" \
+        torch==2.6.0.dev20241107+rocm${version}\
+        torchvision==0.20.0.dev20241107+rocm${version} && \
+    # Install libdrm-amdgpu to avoid errors when retrieving device information (amdgpu.ids: No such file or directory)
+    microdnf install -y libdrm-amdgpu && \
+    microdnf clean all
+
+
+ENV LD_LIBRARY_PATH="$VIRTUAL_ENV/lib/python${PYTHON_VERSION}/site-packages/numpy.libs:$LD_LIBRARY_PATH"
+ENV LD_LIBRARY_PATH="$VIRTUAL_ENV/lib/python${PYTHON_VERSION}/site-packages/pillow.libs:$LD_LIBRARY_PATH"
+ENV LD_LIBRARY_PATH="$VIRTUAL_ENV/lib/python${PYTHON_VERSION}/site-packages/triton/backends/amd/lib:$LD_LIBRARY_PATH"
+ENV LD_LIBRARY_PATH="$VIRTUAL_ENV/lib/python${PYTHON_VERSION}/site-packages/torch/lib:$LD_LIBRARY_PATH"
+
+RUN echo $LD_LIBRARY_PATH | tr : \\n >> /etc/ld.so.conf.d/torch-venv.conf && \
+    ldconfig
 
 FROM rocm_base as rocm_devel
 
@@ -62,8 +74,25 @@ RUN rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.
     microdnf -y install \
         ccache \
         git \
-        rocm \
+        # packages required to build vllm
+        amd-smi \
+        hipblas-devel \
+        hipblaslt-devel \
         hipcc \
+        hipcub-devel \
+        hipfft-devel \
+        hiprand-devel \
+        hipsolver-devel \
+        hipsparse-devel \
+        hsa-rocr-devel \
+        miopen-hip-devel \
+        rccl-devel \
+        rocblas-devel \
+        rocm-device-libs \
+        rocprim-devel \
+        rocrand-devel \
+        rocthrust-devel \
+        # end packages required to build vllm
         wget \
         which && \
     microdnf clean all
@@ -71,8 +100,8 @@ RUN rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.
 WORKDIR /workspace
 
 ENV LLVM_SYMBOLIZER_PATH=/opt/rocm/llvm/bin/llvm-symbolizer
-ENV PATH=$PATH:/opt/rocm/bin:/libtorch/bin
-ENV CPLUS_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:/libtorch/include:/libtorch/include/torch/csrc/api/include:/opt/rocm/include
+ENV PATH=$PATH:/opt/rocm/bin
+ENV CPLUS_INCLUDE_PATH=$VIRTUAL_ENV/lib/python${PYTHON_VERSION}/site-packages/torch/include:/opt/rocm/include
 
 
 FROM rocm_devel AS build_amdsmi
@@ -85,56 +114,39 @@ RUN cd /opt/rocm/share/amd_smi && \
 
 FROM rocm_devel AS build_flashattention
 
-# Whether to install CK-based flash-attention
-ARG BUILD_FA="1"
-ARG TRY_FA_WHEEL="1"
-# Note: The ROCm fork provides a wheel built for ROCm but only for 2.5.9 and python 3.9, so this will be incompatible with the current build
-ARG FA_WHEEL_URL="https://github.com/ROCm/flash-attention/releases/download/v2.5.9post1-cktile-vllm/flash_attn-2.5.9.post1-cp39-cp39-linux_x86_64.whl"
 # only required when not using triton backend
 ARG FA_GFX_ARCHS="gfx90a;gfx942"
 ARG FLASH_ATTENTION_USE_TRITON_ROCM="TRUE"
-# FA_BRANCH is the main_perf branch as of Sep 4 2024 which includes triton backend support, see https://github.com/Dao-AILab/flash-attention/pull/1203
+# FA_BRANCH is the HEAD of main_perf branch as of Sep 4 2024 which includes triton backend support, see https://github.com/Dao-AILab/flash-attention/pull/1203
 ARG FA_BRANCH="75b5360"
 ARG MAX_JOBS
 ENV MAX_JOBS=${MAX_JOBS}
 ENV FLASH_ATTENTION_USE_TRITON_ROCM=${FLASH_ATTENTION_USE_TRITON_ROCM}
 
-# Build ROCm flash-attention wheel if `BUILD_FA` is set to 1
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=cache,target=/workspace/build \
-    if [ "$BUILD_FA" = "1" ]; then \
-        if [ "$TRY_FA_WHEEL" = "1" ] && python3 -m pip install "${FA_WHEEL_URL}"; then \
-	    # If a suitable wheel exists, download it instead of building FA
-            mkdir -p /install && wget -N "${FA_WHEEL_URL}" -P /install; \
-        else \
-            mkdir -p /libs && \
-            cd /libs && \
-            git clone https://github.com/ROCm/flash-attention.git && \
-            cd flash-attention && \
-            git checkout ${FA_BRANCH} && \
-            git submodule update --init && \
-            uv pip install cmake ninja packaging && \
-            env \
-                GPU_ARCHS="${FA_GFX_ARCHS}" \
-                BUILD_TARGET="rocm" \
-                python3 setup.py bdist_wheel --dist-dir=/install; \
-        fi; \
-    else \
-        # Create an empty directory otherwise AS later build stages expect one
-        mkdir -p /install; \
-    fi
+    mkdir -p /libs && \
+    cd /libs && \
+    git clone https://github.com/ROCm/flash-attention.git && \
+    cd flash-attention && \
+    git checkout ${FA_BRANCH} && \
+    git submodule update --init && \
+    uv pip install cmake ninja packaging && \
+    env \
+        GPU_ARCHS="${FA_GFX_ARCHS}" \
+        BUILD_TARGET="rocm" \
+        python3 setup.py bdist_wheel --dist-dir=/install
 
 ##################################################################################################
 
 FROM rocm_devel AS build_vllm
 ARG PYTORCH_ROCM_ARCH
+ARG PYTHON_VERSION
 ARG MAX_JOBS
 ENV MAX_JOBS=${MAX_JOBS}
 ENV PYTORCH_ROCM_ARCH=${PYTORCH_ROCM_ARCH}
 
-
 COPY . .
-
 
 ENV VLLM_TARGET_DEVICE="rocm"
 ENV MAX_JOBS=${MAX_JOBS}
@@ -144,11 +156,11 @@ ENV VLLM_INSTALL_PUNICA_KERNELS=1
 RUN --mount=type=cache,target=/root/.cache/ccache \
     --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
+    uv pip install -v -U \
+        ninja setuptools-scm>=8 "cmake>=3.26" packaging && \
     env CFLAGS="-march=haswell" \
         CXXFLAGS="$CFLAGS $CXXFLAGS" \
         CMAKE_BUILD_TYPE=Release \
-    uv pip install -v -U \
-        ninja setuptools-scm>=8 "cmake>=3.26" packaging && \
     python3 setup.py bdist_wheel --dist-dir=dist
 
 #################### libsodium Build IMAGE ####################
@@ -165,7 +177,12 @@ RUN curl -LO https://github.com/jedisct1/libsodium/releases/download/${LIBSODIUM
     && rm -f libsodium*.tar.gz \
     && mv libsodium*/* ./
 
-RUN CFLAGS="-O3 -Wall -Werror=format-security -Wno-unused-function -Wp,-D_GLIBCXX_ASSERTIONS -fstack-protector-strong -fstack-clash-protection -fcf-protection"\    ./configure --prefix="/usr/" --libdir=/usr/lib64 && make -j $MAX_JOBS && make check
+RUN CFLAGS="-O3 -Wall -Werror=format-security -Wno-unused-function -Wp,-D_GLIBCXX_ASSERTIONS -fstack-protector-strong -fstack-clash-protection -fcf-protection" \
+    ./configure \
+        --prefix="/usr/" \
+        --libdir=/usr/lib64 && \
+    make -j $(nproc) && \
+    make check
 
 ##################################################################################################
 
@@ -178,7 +195,7 @@ ENV VIRTUAL_ENV=/opt/vllm
 ENV PATH=$VIRTUAL_ENV/bin:$PATH
 
 # Required for triton
-RUN microdnf install -y --setopt=install_weak_deps=0 --nodocs gcc && \
+RUN microdnf install -y --setopt=install_weak_deps=0 --nodocs gcc rsync && \
     microdnf clean all
 
 # Install libsodium for Tensorizer encryption
@@ -191,9 +208,10 @@ RUN --mount=type=bind,from=build_amdsmi,src=/install,target=/install/amdsmi/ \
     --mount=type=bind,from=build_vllm,src=/workspace/dist,target=/install/vllm/ \
     --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
-    uv pip install -v  \
+    export version="$(awk -F. '{print $1"."$2}' <<< $ROCM_VERSION)" && \
+    uv pip install \
         --index-strategy=unsafe-best-match \
-        --extra-index-url "https://download.pytorch.org/whl/nightly/rocm6.1" \
+        --extra-index-url "https://download.pytorch.org/whl/nightly/rocm${version}" \
         /install/amdsmi/*.whl\
         /install/flashattention/*.whl\
         /install/vllm/*.whl
@@ -202,9 +220,7 @@ RUN --mount=type=bind,from=build_amdsmi,src=/install,target=/install/amdsmi/ \
 RUN umask 002 && \
     useradd --uid 2000 --gid 0 vllm && \
     mkdir -p /licenses && \
-    chmod g+rwx $HOME /usr/src /workspace && \
-    chmod 0775 /var/log/rocm_smi_lib && \
-    chmod 0664 /var/log/rocm_smi_lib/*
+    chmod g+rwx $HOME /usr/src /workspace
 
 COPY LICENSE /licenses/vllm.md
 COPY examples/*.jinja /app/data/template/
@@ -225,8 +241,7 @@ ENV HF_HUB_OFFLINE=1 \
     FLASH_ATTENTION_USE_TRITON_ROCM="TRUE" \
     OUTLINES_CACHE_DIR=/tmp/outlines \
     NUMBA_CACHE_DIR=/tmp/numba \
-    TRITON_CACHE_DIR=/tmp/triton \
-    LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/opt/vllm/lib/python3.12/site-packages/pillow.libs/:/opt/vllm/lib/python3.12/site-packages/numpy.libs/"
+    TRITON_CACHE_DIR=/tmp/triton
 
 # Switch to the non-root user
 USER 2000
@@ -240,8 +255,9 @@ FROM vllm-openai as vllm-grpc-adapter
 USER root
 
 RUN --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,from=build_vllm,src=/workspace/dist,target=/install/vllm/ \
-    uv pip install /install/vllm/*.whl vllm-tgis-adapter==0.5.3
+    HOME=/root/ uv pip install /install/vllm/*.whl vllm-tgis-adapter==0.5.3
 
 ENV GRPC_PORT=8033 \
     PORT=8000 \

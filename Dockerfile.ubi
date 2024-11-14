@@ -155,6 +155,7 @@ ENV LD_LIBRARY_PATH="${VIRTUAL_ENV}/lib/python${PYTHON_VERSION}/site-packages/nv
 
 # Triton needs a CC compiler
 RUN microdnf install -y gcc \
+    rsync \
     && microdnf clean all
 
 # install vllm wheel first, so that torch etc will be installed
@@ -181,6 +182,9 @@ ENV HF_HUB_OFFLINE=1 \
     VLLM_ALLOW_LONG_MAX_MODEL_LEN=1 \
     VLLM_USAGE_SOURCE=production-docker-image \
     VLLM_WORKER_MULTIPROC_METHOD=fork \
+    OUTLINES_CACHE_DIR=/tmp/outlines \
+    NUMBA_CACHE_DIR=/tmp/numba \
+    TRITON_CACHE_DIR=/tmp/triton \
     VLLM_NO_USAGE_STATS=1
 
 # setup non-root user for OpenShift
