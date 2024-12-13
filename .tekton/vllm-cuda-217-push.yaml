@@ -34,19 +34,19 @@ spec:
     - pipelineTaskName: ecosystem-cert-preflight-checks
       computeResources:
         requests:
-          cpu: '2'
-          memory: 10Gi
+          cpu: '8'
+          memory: 16Gi
         limits:
-          cpu: '4'
-          memory: 20Gi
+          cpu: '16'
+          memory: 32Gi
     - pipelineTaskName: clair-scan
       computeResources:
         requests:
-          cpu: '2'
-          memory: 10Gi
+          cpu: '8'
+          memory: 16Gi
         limits:
-          cpu: '4'
-          memory: 20Gi
+          cpu: '16'
+          memory: 32Gi
   pipelineSpec:
     description: |
       This pipeline is ideal for building container images from a Containerfile while maintaining trust after pipeline customization.
