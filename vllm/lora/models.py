@@ -259,7 +259,8 @@ class LoRAModel(AdapterModel):
                 new_embeddings_tensor_path)
         elif os.path.isfile(new_embeddings_bin_file_path):
             embeddings = torch.load(new_embeddings_bin_file_path,
-                                    map_location=device)
+                                    map_location=device,
+                                    weights_only=True)
 
         rank = config["r"]
         lora_alpha = config["lora_alpha"]
