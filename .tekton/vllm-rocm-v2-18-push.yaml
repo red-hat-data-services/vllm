@@ -36,16 +36,16 @@ spec:
     - pipelineTaskName: ecosystem-cert-preflight-checks
       computeResources:
         requests:
-          cpu: '16'
-          memory: 24Gi
+          cpu: '8'
+          memory: 16Gi
         limits:
-          cpu: '24'
+          cpu: '16'
           memory: 32Gi
     - pipelineTaskName: clair-scan
       computeResources:
         requests:
-          cpu: '16'
-          memory: 24Gi
+          cpu: '8'
+          memory: 16Gi
         limits:
           cpu: '16'
           memory: 32Gi
