@@ -228,7 +228,7 @@ spec:
           value:
           - $(params.build-platforms)
       name: build-images
-      timeout: 4h
+      timeout: 5h
       params:
       - name: IMAGE
         value: $(params.output-image)
