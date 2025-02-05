@@ -1,5 +1,5 @@
 ## Global Args #################################################################
-ARG BASE_UBI_IMAGE_TAG=9.5-1733767867
+ARG BASE_UBI_IMAGE_TAG=9.5-1736404155
 ARG PYTHON_VERSION=3.12
 
 ARG TORCH_CUDA_ARCH_LIST="7.0 7.5 8.0 8.6 8.9 9.0+PTX"
