@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 from typing import Dict
 
 import torch
@@ -44,7 +46,7 @@ class TopKTopPSampler(nn.Module):
                 logger.warning(
                     "FlashInfer is not available. Falling back to the PyTorch-"
                     "native implementation of top-p & top-k sampling. For the "
-                    "best performance, please install FalshInfer.")
+                    "best performance, please install FlashInfer.")
                 self.forward = self.forward_native
         else:
             self.forward = self.forward_native

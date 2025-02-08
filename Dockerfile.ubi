@@ -42,13 +42,15 @@ FROM python-install as cuda-base
 RUN curl -Lo /etc/yum.repos.d/cuda-rhel9.repo \
         https://developer.download.nvidia.com/compute/cuda/repos/rhel9/x86_64/cuda-rhel9.repo
 
+ENV CUDA_HOME="/usr/local/cuda" \
+    PATH="${CUDA_HOME}/bin:${PATH}"
+ENV LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${CUDA_HOME}/lib64/stubs/:${CUDA_HOME}/extras/CUPTI/lib64:${LD_LIBRARY_PATH}"
 RUN microdnf install -y \
         cuda-nvcc-12-4 cuda-nvtx-12-4 cuda-libraries-devel-12-4 && \
-    microdnf clean all
+    microdnf clean all && \
+    ln -s ${CUDA_HOME}/lib64/stubs/libcuda.so /usr/lib64/
 
-ENV CUDA_HOME="/usr/local/cuda" \
-    PATH="${CUDA_HOME}/bin:${PATH}" \
-    LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${CUDA_HOME}/extras/CUPTI/lib64:${LD_LIBRARY_PATH}"
+
 
 ## Python cuda base #################################################################
 FROM cuda-base AS python-cuda-base
@@ -172,7 +174,7 @@ RUN --mount=type=bind,from=libsodium-builder,src=/usr/src/libsodium,target=/usr/
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
     uv pip install \
-        "https://github.com/flashinfer-ai/flashinfer/releases/download/v0.1.6/flashinfer-0.1.6+cu124torch2.4-cp312-cp312-linux_x86_64.whl"
+        "https://github.com/flashinfer-ai/flashinfer/releases/download/v0.2.0.post2/flashinfer_python-0.2.0.post2+cu124torch2.5-cp312-cp312-linux_x86_64.whl"
 
 ENV HF_HUB_OFFLINE=1 \
     HOME=/home/vllm \
@@ -185,7 +187,13 @@ ENV HF_HUB_OFFLINE=1 \
     VLLM_NO_USAGE_STATS=1 \
     OUTLINES_CACHE_DIR=/tmp/outlines \
     NUMBA_CACHE_DIR=/tmp/numba \
-    TRITON_CACHE_DIR=/tmp/triton
+    TRITON_CACHE_DIR=/tmp/triton \
+    # Setup NCCL monitoring with torch
+    # For tensor-parallel workloads, this monitors for NCCL deadlocks when
+    # one rank dies, and tears down the NCCL process groups so that the driver
+    # can cleanly exit.
+    TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=15 \
+    TORCH_NCCL_DUMP_ON_TIMEOUT=0
 
 # setup non-root user for OpenShift
 RUN umask 002 && \

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 import functools
 from collections import UserDict
 from dataclasses import dataclass
@@ -12,7 +14,7 @@ from vllm.logger import init_logger
 from vllm.transformers_utils.processor import cached_get_processor
 from vllm.transformers_utils.tokenizer import AnyTokenizer
 from vllm.utils import (ClassRegistry, get_allowed_kwarg_only_overrides,
-                        print_warning_once, resolve_mm_processor_kwargs)
+                        resolve_mm_processor_kwargs)
 
 from .data import ProcessorInputs, SingletonInputs
 from .parse import is_encoder_decoder_inputs
@@ -27,6 +29,17 @@ logger = init_logger(__name__)
 
 C = TypeVar("C", bound=PretrainedConfig, default=PretrainedConfig)
 P = TypeVar("P", bound=ProcessorMixin, default=ProcessorMixin)
+
+
+class HashableDict(dict):
+    """
+    A dictionary that can be hashed by lru_cache.
+    """
+
+    # NOTE: pythonic dict is not hashable,
+    # we override on it directly for simplicity
+    def __hash__(self) -> int:  # type: ignore[override]
+        return hash(frozenset(self.items()))
 
 
 @dataclass(frozen=True)
@@ -99,6 +112,16 @@ class InputContext:
 
         merged_kwargs = {**base_kwargs, **kwargs}
 
+        if isinstance(typ, type):
+            merged_kwargs["processor_cls"] = typ
+
+        # NOTE: Pythonic dict is not hashable and will raise unhashable type
+        # error when calling `cached_get_processor`, therefore we need to
+        # wrap it to a hashable dict.
+        for key, value in merged_kwargs.items():
+            if isinstance(value, dict):
+                merged_kwargs[key] = HashableDict(value)
+
         hf_processor = cached_get_processor(
             self.model_config.model,
             trust_remote_code=self.model_config.trust_remote_code,
@@ -132,10 +155,13 @@ class InputProcessingContext(InputContext):
     def call_hf_processor(
         self,
         hf_processor: ProcessorMixin,
-        prompt: str,
-        processor_data: Mapping[str, object],
-        inference_kwargs: Mapping[str, object],
+        data: Mapping[str, object],
+        kwargs: Mapping[str, object] = {},
     ) -> BatchFeature:
+        """
+        Call :code:`hf_processor` on the prompt :code:`data`
+        (text, image, audio...) with configurable options :code:`kwargs`.
+        """
         assert callable(hf_processor)
 
         base_kwargs = self.model_config.mm_processor_kwargs
@@ -144,21 +170,15 @@ class InputProcessingContext(InputContext):
 
         merged_kwargs = resolve_mm_processor_kwargs(
             base_kwargs,
-            inference_kwargs,
+            kwargs,
             hf_processor,
             requires_kw_only=False,
             allow_var_kwargs=True,
         )
 
         try:
-            return hf_processor(
-                text=prompt,
-                **processor_data,
-                **merged_kwargs,
-                return_tensors="pt",
-            )
+            return hf_processor(**data, **merged_kwargs, return_tensors="pt")
         except Exception as exc:
-            data = dict(text=prompt, **processor_data)
             msg = (f"Failed to apply {type(hf_processor).__name__} "
                    f"on data={data} with kwargs={merged_kwargs}")
 
@@ -313,9 +333,6 @@ class InputRegistry:
 
         The model is identified by ``model_config``.
 
-        See also:
-            :ref:`enabling-multimodal-inputs`
-
         Note:
             This should be called after
             :meth:`~MultiModalRegistry.init_mm_limits_per_prompt`.
@@ -323,6 +340,7 @@ class InputRegistry:
         # Avoid circular import
         from vllm.model_executor.model_loader import get_model_architecture
         from vllm.multimodal import MultiModalKwargs
+        from vllm.multimodal.profiling import MultiModalProfiler
         from vllm.multimodal.utils import cached_get_tokenizer
 
         if mm_registry.has_processor(model_config):
@@ -331,13 +349,8 @@ class InputRegistry:
                 trust_remote_code=model_config.trust_remote_code,
             )
             processor = mm_registry.create_processor(model_config, tokenizer)
-
-            mm_counts = mm_registry.get_mm_limits_per_prompt(model_config)
-            mm_max_tokens = mm_registry.get_max_tokens_by_modality(
-                model_config)
-
-            dummy_data = processor.get_dummy_data(seq_len, mm_counts,
-                                                  mm_max_tokens)
+            profiler = MultiModalProfiler(processor)
+            dummy_data = profiler.get_dummy_data(seq_len)
         else:
             model_cls, _ = get_model_architecture(model_config)
             if is_encoder_data:
@@ -356,7 +369,7 @@ class InputRegistry:
         num_tokens = dummy_data.seq_data.prompt_token_ids
         if len(num_tokens) < seq_len:
             if is_encoder_data:
-                print_warning_once(
+                logger.warning_once(
                     f"Expected at least {seq_len} dummy encoder tokens for "
                     f"profiling, but found {len(num_tokens)} tokens instead.")
             else:
@@ -388,10 +401,8 @@ class InputRegistry:
         Register an input processor to a model class.
 
         The provided function is invoked on each input to the model. This
-        happens before :meth:`~vllm.multimodal.MultiModalRegistry.map_input`.
-
-        See also:
-            :ref:`input-processing-pipeline`
+        happens before
+        :meth:`~vllm.multimodal.registry.MultiModalRegistry.map_input`.
         """
 
         def wrapper(model_cls: N) -> N:
@@ -425,7 +436,7 @@ class InputRegistry:
             # Be more strict in V2
             assert "mm_kwargs" in inputs
         else:
-            assert_never(inputs["type"])
+            assert_never(inputs["type"])  # type: ignore[arg-type]
 
     def process_input(self, model_config: "ModelConfig",
                       inputs: ProcessorInputs) -> ProcessorInputs:
@@ -433,9 +444,6 @@ class InputRegistry:
         Apply an input processor to an instance of model inputs.
 
         The model is identified by ``model_config``.
-
-        See also:
-            :ref:`input-processing-pipeline`
         """
         # Avoid circular import
         from vllm.model_executor.model_loader import get_model_architecture

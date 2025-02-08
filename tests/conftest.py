@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 import json
 import os
 import tempfile
@@ -28,19 +30,20 @@ from vllm.distributed import (cleanup_dist_env_and_memory,
                               init_distributed_environment,
                               initialize_model_parallel)
 from vllm.inputs import (ExplicitEncoderDecoderPrompt, TextPrompt,
-                         to_enc_dec_tuple_list, zip_enc_dec_prompts)
+                         TokensPrompt, to_enc_dec_tuple_list,
+                         zip_enc_dec_prompts)
 from vllm.logger import init_logger
 from vllm.outputs import RequestOutput
-from vllm.platforms import current_platform
 from vllm.sampling_params import BeamSearchParams
 from vllm.utils import (STR_DTYPE_TO_TORCH_DTYPE, cuda_device_count_stateless,
-                        identity)
+                        identity, is_list_of)
 
 logger = init_logger(__name__)
 
 _TEST_DIR = os.path.dirname(__file__)
 _TEST_PROMPTS = [os.path.join(_TEST_DIR, "prompts", "example.txt")]
 _LONG_PROMPTS = [os.path.join(_TEST_DIR, "prompts", "summary.txt")]
+_SYS_MSG = os.path.join(_TEST_DIR, "system_messages", "sonnet3.5_nov2024.txt")
 
 _M = TypeVar("_M")
 _PromptMultiModalInput = Union[List[_M], List[List[_M]]]
@@ -178,6 +181,12 @@ def example_prompts() -> List[str]:
     return prompts
 
 
+@pytest.fixture
+def example_system_message() -> str:
+    with open(_SYS_MSG) as f:
+        return f.read()
+
+
 class DecoderPromptType(Enum):
     """For encoder/decoder models only."""
     CUSTOM = 1
@@ -237,11 +246,13 @@ def video_assets() -> _VideoAssets:
 
 
 _T = TypeVar("_T", nn.Module, torch.Tensor, BatchEncoding, BatchFeature, dict)
+_R = TypeVar("_R")
 
 
 class HfRunner:
 
     def wrap_device(self, x: _T, device: Optional[str] = None) -> _T:
+        from vllm.platforms import current_platform
         if x is None or isinstance(x, (bool, )):
             return x
 
@@ -726,6 +737,7 @@ class VllmRunner:
         images: Optional[PromptImageInput] = None,
         videos: Optional[PromptVideoInput] = None,
         audios: Optional[PromptAudioInput] = None,
+        **kwargs: Any,
     ) -> List[Tuple[List[List[int]], List[str]]]:
         inputs = self.get_inputs(prompts,
                                  images=images,
@@ -733,7 +745,8 @@ class VllmRunner:
                                  audios=audios)
 
         req_outputs = self.model.generate(inputs,
-                                          sampling_params=sampling_params)
+                                          sampling_params=sampling_params,
+                                          **kwargs)
 
         outputs: List[Tuple[List[List[int]], List[str]]] = []
         for req_output in req_outputs:
@@ -771,6 +784,7 @@ class VllmRunner:
         images: Optional[PromptImageInput] = None,
         audios: Optional[PromptAudioInput] = None,
         videos: Optional[PromptVideoInput] = None,
+        **kwargs: Any,
     ) -> Union[List[TokensTextLogprobs],
                List[TokensTextLogprobsPromptLogprobs]]:
         inputs = self.get_inputs(prompts,
@@ -779,7 +793,8 @@ class VllmRunner:
                                  audios=audios)
 
         req_outputs = self.model.generate(inputs,
-                                          sampling_params=sampling_params)
+                                          sampling_params=sampling_params,
+                                          **kwargs)
 
         toks_str_logsprobs_prompt_logprobs = (
             self._final_steps_generate_w_logprobs(req_outputs))
@@ -815,13 +830,15 @@ class VllmRunner:
         images: Optional[PromptImageInput] = None,
         videos: Optional[PromptVideoInput] = None,
         audios: Optional[PromptAudioInput] = None,
+        **kwargs: Any,
     ) -> List[Tuple[List[int], str]]:
         greedy_params = SamplingParams(temperature=0.0, max_tokens=max_tokens)
         outputs = self.generate(prompts,
                                 greedy_params,
                                 images=images,
                                 videos=videos,
-                                audios=audios)
+                                audios=audios,
+                                **kwargs)
         return [(output_ids[0], output_str[0])
                 for output_ids, output_str in outputs]
 
@@ -836,6 +853,7 @@ class VllmRunner:
         videos: Optional[PromptVideoInput] = None,
         stop_token_ids: Optional[List[int]] = None,
         stop: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> Union[List[TokensTextLogprobs],
                List[TokensTextLogprobsPromptLogprobs]]:
         greedy_logprobs_params = SamplingParams(
@@ -850,7 +868,8 @@ class VllmRunner:
                                         greedy_logprobs_params,
                                         images=images,
                                         audios=audios,
-                                        videos=videos)
+                                        videos=videos,
+                                        **kwargs)
 
     def generate_encoder_decoder_greedy_logprobs(
         self,
@@ -879,6 +898,12 @@ class VllmRunner:
         beam_width: int,
         max_tokens: int,
     ) -> List[Tuple[List[List[int]], List[str]]]:
+        if is_list_of(prompts, str, check="all"):
+            prompts = [TextPrompt(prompt=prompt) for prompt in prompts]
+        else:
+            prompts = [
+                TokensPrompt(prompt_token_ids=tokens) for tokens in prompts
+            ]
         outputs = self.model.beam_search(
             prompts,
             BeamSearchParams(beam_width=beam_width, max_tokens=max_tokens))
@@ -915,6 +940,10 @@ class VllmRunner:
     ) -> List[float]:
         req_outputs = self.model.score(text_1, text_2)
         return [req_output.outputs.score for req_output in req_outputs]
+
+    def apply_model(self, func: Callable[[nn.Module], _R]) -> list[_R]:
+        executor = self.model.llm_engine.model_executor
+        return executor.apply_model(func)
 
     def __enter__(self):
         return self
