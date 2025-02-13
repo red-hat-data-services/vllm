@@ -1,5 +1,5 @@
 ## Global Args #################################################################
-ARG BASE_UBI_IMAGE_TAG=9.5-1736404155
+ARG BASE_UBI_IMAGE_TAG=9.5-1738816775
 ARG PYTHON_VERSION=3.12
 
 ARG TORCH_CUDA_ARCH_LIST="7.0 7.5 8.0 8.6 8.9 9.0+PTX"
@@ -217,7 +217,7 @@ USER root
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,from=build,src=/workspace/dist,target=/workspace/dist \
-    HOME=/root uv pip install "$(echo /workspace/dist/*.whl)[tensorizer]" vllm-tgis-adapter==0.6.0
+    HOME=/root uv pip install "$(echo /workspace/dist/*.whl)[tensorizer]" vllm-tgis-adapter==0.6.2
 
 ENV GRPC_PORT=8033 \
     PORT=8000 \

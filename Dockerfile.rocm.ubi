@@ -1,5 +1,5 @@
 ## Global Args ##################################################################
-ARG BASE_UBI_IMAGE_TAG=9.5-1736404155
+ARG BASE_UBI_IMAGE_TAG=9.5-1738816775
 ARG PYTHON_VERSION=3.12
 # Default ROCm ARCHes to build vLLM for.
 ARG PYTORCH_ROCM_ARCH="gfx908;gfx90a;gfx942;gfx1100"
@@ -253,7 +253,7 @@ USER root
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,from=build_vllm,src=/workspace/dist,target=/install/vllm/ \
-    HOME=/root uv pip install /install/vllm/*.whl vllm-tgis-adapter==0.6.0
+    HOME=/root uv pip install /install/vllm/*.whl vllm-tgis-adapter==0.6.2
 
 ENV GRPC_PORT=8033 \
     PORT=8000 \
