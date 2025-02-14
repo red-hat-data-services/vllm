@@ -684,6 +684,7 @@ spec:
     - name: netrc
       optional: true
   taskRunTemplate: {}
+  #restart
   workspaces:
   - name: git-auth
     secret:
