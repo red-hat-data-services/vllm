@@ -140,7 +140,7 @@ spec:
       description: Add built image into an OCI image index
       name: build-image-index
       type: string
-    - default: []
+    - default: [max_jobs=48]
       description: Array of --build-arg values ("arg=value" strings) for buildah
       name: build-args
       type: array
@@ -149,7 +149,7 @@ spec:
       name: build-args-file
       type: string
     - default:
-      - linux/x86_64
+      - linux-extra-fast/amd64
       description: List of platforms to build the container images on. The available
         set of values is determined by the configuration of the multi-platform-controller.
       name: build-platforms
@@ -295,7 +295,7 @@ spec:
           value:
           - $(params.build-platforms)
       name: build-images
-      timeout: 5h
+      timeout: 4h
       params:
       - name: IMAGE
         value: $(params.output-image)
@@ -684,7 +684,6 @@ spec:
     - name: netrc
       optional: true
   taskRunTemplate: {}
-  #restart
   workspaces:
   - name: git-auth
     secret:
