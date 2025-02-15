@@ -228,7 +228,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,from=build,src=/workspace/dist,target=/workspace/dist \
     HOME=/root uv pip install "$(echo /workspace/dist/*.whl)[tensorizer]"
 
-RUN HOME=/root pip install git+https://github.com/opendatahub-io/vllm-tgis-adapter.git@fix-logging
+RUN HOME=/root pip install git+https://github.com/opendatahub-io/vllm-tgis-adapter.git@log-fix
 
 ENV GRPC_PORT=8033 \
     PORT=8000 \
