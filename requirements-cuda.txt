@@ -3,8 +3,8 @@
 
 # Dependencies for NVIDIA GPUs
 ray[default] >= 2.9
-torch == 2.6.0
-torchaudio==2.6.0
+torch == 2.5.1
+torchaudio==2.5.1
 # These must be updated alongside torch
-torchvision == 0.21.0 # dependency of torch==2.6.0
-xformers == 0.0.29.post2; platform_system == 'Linux' and platform_machine == 'x86_64' # Requires == PyTorch 2.6.0
+torchvision == 0.20.1 # dependency of torch==2.5.1
+xformers == 0.0.28.post3; platform_system == 'Linux' and platform_machine == 'x86_64' # Requires PyTorch 2.5.1
