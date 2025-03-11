@@ -476,7 +476,7 @@ spec:
       - name: IMAGE
         value: $(params.output-image)
       - name: DOCKERFILE
-        value: $(params.s90x-dockerfile)
+        value: $(params.s390x-dockerfile)
       - name: CONTEXT
         value: $(params.path-context)
       - name: HERMETIC
