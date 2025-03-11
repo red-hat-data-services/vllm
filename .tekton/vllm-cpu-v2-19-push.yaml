@@ -300,10 +300,8 @@ spec:
         - "true"
     - name: build-image-index
       params:
-      - name: IMAGES
-        value:
-        - $(tasks.build-ppc64le-image.results.IMAGE_REF)
-        - $(tasks.build-s390x-image.results.IMAGE_REF)
+      - name: IMAGE
+        value: $(params.output-image)
       - name: COMMIT_SHA
         value: $(tasks.clone-repository.results.commit)
       - name: IMAGE_EXPIRES_AFTER
@@ -312,7 +310,8 @@ spec:
         value: $(params.build-image-index)
       - name: IMAGES
         value:
-        - $(tasks.build-images.results.IMAGE_REF[*])
+        - $(tasks.build-ppc64le-image.results.IMAGE_REF)
+        - $(tasks.build-s390x-image.results.IMAGE_REF)
       runAfter:
       - build-ppc64le-image
       - build-s390x-image
@@ -477,7 +476,7 @@ spec:
       - name: IMAGE
         value: $(params.output-image)
       - name: DOCKERFILE
-        value: $(params.dockerfile)
+        value: $(params.s90x-dockerfile)
       - name: CONTEXT
         value: $(params.path-context)
       - name: HERMETIC
@@ -601,12 +600,12 @@ spec:
         resolver: bundles
     - name: push-dockerfile
       params:
-      - name: IMAGE
+      - name: IMAGES
         value: $(tasks.build-image-index.results.IMAGE_URL)
       - name: IMAGE_DIGEST
         value: $(tasks.build-image-index.results.IMAGE_DIGEST)
       - name: DOCKERFILE
-        value: $(params.dockerfile)
+        value: $(params.s90x-dockerfile)
       - name: CONTEXT
         value: $(params.path-context)
       - name: SOURCE_ARTIFACT
