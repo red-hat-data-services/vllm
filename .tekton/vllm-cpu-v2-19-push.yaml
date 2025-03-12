@@ -17,6 +17,8 @@ metadata:
   name: vllm-cpu-v2-19-on-push
   namespace: rhoai-tenant
 spec:
+  timeouts:
+    pipeline: 8h
   params:
   - name: git-url
     value: '{{source_url}}'
@@ -209,6 +211,7 @@ spec:
       - name: netrc
         workspace: netrc
     - name: build-ppc64le-image
+      timeout: 4h
       params:
       - name: PLATFORM
         value: linux-large/ppc64le
@@ -254,6 +257,7 @@ spec:
         values:
         - "true"
     - name: build-s390x-image
+      timeout: 4h
       params:
       - name: PLATFORM
         value: linux-large/s390x
@@ -402,6 +406,7 @@ spec:
         values:
         - "false"
     - name: ecosystem-cert-preflight-checks
+      timeout: 2h
       params:
       - name: image-url
         value: $(tasks.build-image-index.results.IMAGE_URL)
@@ -448,6 +453,7 @@ spec:
         values:
         - "false"
     - name: clamav-scan
+      timeout: 2h
       params:
       - name: image-digest
         value: $(tasks.build-image-index.results.IMAGE_DIGEST)
