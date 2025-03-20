@@ -13,6 +13,8 @@ login rhel-ai-wheels-prefetch-token-rhoai
 password $BOT_PAT
 EOF
 
+trap "rm ${HOME}/.netrc" EXIT
+
 # https://docs.astral.sh/uv/configuration/indexes/#searching-across-multiple-indexes
 # This will prefer to use the custom index, and fall back to pypi if needed
 export UV_EXTRA_INDEX_URL=${VLLM_WHEEL_INDEX}
@@ -29,6 +31,4 @@ if [[ -n "$VLLM_WHEEL_VERSION" ]]; then
 fi
 
 uv pip install $vllm $vllm_tgis_adapter
-
-rm ${HOME}/.netrc
 
