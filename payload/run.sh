@@ -9,7 +9,7 @@ set -ex
 
 cat <<EOF > ${HOME}/.netrc
 machine gitlab.com
-login ckodama
+login rhel-ai-wheels-prefetch-token-rhoai 
 password $BOT_PAT
 EOF
 
