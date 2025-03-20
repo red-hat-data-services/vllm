@@ -10,7 +10,6 @@ import os
 import re
 import signal
 import socket
-import sys
 import tempfile
 import uuid
 from argparse import Namespace
@@ -259,7 +258,8 @@ async def build_async_engine_client_from_engine_args(
 
 async def validate_json_request(raw_request: Request):
     content_type = raw_request.headers.get("content-type", "").lower()
-    if content_type != "application/json":
+    media_type = content_type.split(";", maxsplit=1)[0]
+    if media_type != "application/json":
         raise HTTPException(
             status_code=HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
             detail="Unsupported Media Type: Only 'application/json' is allowed"
@@ -625,6 +625,24 @@ if envs.VLLM_SERVER_DEV_MODE:
         await engine_client(raw_request).reset_prefix_cache()
         return Response(status_code=200)
 
+    @router.post("/sleep")
+    async def sleep(raw_request: Request):
+        # get POST params
+        level = raw_request.query_params.get("level", "1")
+        logger.info("sleep the engine with level %s", level)
+        await engine_client(raw_request).sleep(int(level))
+        # FIXME: in v0 with frontend multiprocessing, the sleep command
+        # is sent but does not finish yet when we return a response.
+        return Response(status_code=200)
+
+    @router.post("/wake_up")
+    async def wake_up(raw_request: Request):
+        logger.info("wake up the engine")
+        await engine_client(raw_request).wake_up()
+        # FIXME: in v0 with frontend multiprocessing, the wake-up command
+        # is sent but does not finish yet when we return a response.
+        return Response(status_code=200)
+
 
 @router.post("/invocations", dependencies=[Depends(validate_json_request)])
 async def invocations(raw_request: Request):
@@ -798,7 +816,9 @@ async def init_app_state(
     state.log_stats = not args.disable_log_stats
 
     resolved_chat_template = load_chat_template(args.chat_template)
-    logger.info("Using supplied chat template:\n%s", resolved_chat_template)
+    if resolved_chat_template is not None:
+        logger.info("Using supplied chat template:\n%s",
+                    resolved_chat_template)
 
     state.openai_serving_models = OpenAIServingModels(
         engine_client=engine_client,
@@ -882,6 +902,7 @@ def create_server_socket(addr: Tuple[str, int]) -> socket.socket:
 
     sock = socket.socket(family=family, type=socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
     sock.bind(addr)
 
     return sock
@@ -929,8 +950,17 @@ async def run_server(args, **uvicorn_kwargs) -> None:
         model_config = await engine_client.get_model_config()
         await init_app_state(engine_client, model_config, app.state, args)
 
+        def _listen_addr(a: str) -> str:
+            if is_valid_ipv6_address(a):
+                return '[' + a + ']'
+            return a or "0.0.0.0"
+
+        logger.info("Starting vLLM API server on http://%s:%d",
+                    _listen_addr(sock_addr[0]), sock_addr[1])
+
         shutdown_task = await serve_http(
             app,
+            sock=sock,
             host=args.host,
             port=args.port,
             log_level=args.uvicorn_log_level,
@@ -939,8 +969,6 @@ async def run_server(args, **uvicorn_kwargs) -> None:
             ssl_certfile=args.ssl_certfile,
             ssl_ca_certs=args.ssl_ca_certs,
             ssl_cert_reqs=args.ssl_cert_reqs,
-            # Workaround to work on macOS
-            fd=sock.fileno() if sys.platform.startswith("darwin") else None,
             **uvicorn_kwargs,
         )
 
@@ -952,7 +980,8 @@ async def run_server(args, **uvicorn_kwargs) -> None:
 
 if __name__ == "__main__":
     # NOTE(simon):
-    # This section should be in sync with vllm/scripts.py for CLI entrypoints.
+    # This section should be in sync with vllm/entrypoints/cli/main.py for CLI
+    # entrypoints.
     parser = FlexibleArgumentParser(
         description="vLLM OpenAI-Compatible RESTful API server.")
     parser = make_arg_parser(parser)

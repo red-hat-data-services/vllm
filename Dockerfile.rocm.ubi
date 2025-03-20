@@ -1,5 +1,5 @@
 ## Global Args ##################################################################
-ARG BASE_UBI_IMAGE_TAG=9.5-1739420147
+ARG BASE_UBI_IMAGE_TAG=9.5-1741850109
 ARG PYTHON_VERSION=3.12
 # Default ROCm ARCHes to build vLLM for.
 ARG PYTORCH_ROCM_ARCH="gfx908;gfx90a;gfx942;gfx1100"
@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 
 FROM base AS rocm_base
-ARG ROCM_VERSION=6.3.1
+ARG ROCM_VERSION=6.3.4
 ARG PYTHON_VERSION
 ARG BASE_UBI_IMAGE_TAG
 
@@ -49,10 +49,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     export version="$(awk -F. '{print $1"."$2}' <<< $ROCM_VERSION)" && \
     uv pip install --pre \
         --index-url "https://download.pytorch.org/whl/nightly/rocm${version}" \
-        torch==2.6.0.dev20250104+rocm${version}\
-        torchvision==0.22.0.dev20250104+rocm${version} && \
+        torch==2.7.0.dev20250308+rocm${version}\
+        torchvision==0.22.0.dev20250308+rocm${version} && \
     # Install libdrm-amdgpu to avoid errors when retrieving device information (amdgpu.ids: No such file or directory)
-    microdnf install -y libdrm-amdgpu && \
+    microdnf install -y --nodocs libdrm-amdgpu && \
     microdnf clean all
 
 
@@ -71,7 +71,7 @@ ENV CCACHE_DIR=/root/.cache/ccache
 RUN rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
     rpm -ql epel-release && \
     microdnf -y update && \
-    microdnf -y install \
+    microdnf --nodocs -y install \
         ccache \
         git \
         # packages required to build vllm
@@ -163,7 +163,7 @@ RUN --mount=type=cache,target=/root/.cache/ccache \
 #################### libsodium Build IMAGE ####################
 FROM rocm_base as libsodium-builder
 
-RUN microdnf install -y gcc gzip tar \
+RUN microdnf install -y --nodocs gcc gzip tar \
     && microdnf clean all
 
 WORKDIR /usr/src/libsodium
@@ -253,7 +253,7 @@ USER root
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,from=build_vllm,src=/workspace/dist,target=/install/vllm/ \
-    HOME=/root uv pip install /install/vllm/*.whl vllm-tgis-adapter==0.6.2
+    HOME=/root uv pip install /install/vllm/*.whl vllm-tgis-adapter==0.6.3
 
 ENV GRPC_PORT=8033 \
     PORT=8000 \

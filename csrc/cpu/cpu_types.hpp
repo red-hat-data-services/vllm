@@ -10,6 +10,9 @@
 #elif defined(__aarch64__)
   // arm implementation
   #include "cpu_types_arm.hpp"
+#elif defined(__s390x__)
+  // s390 implementation
+  #include "cpu_types_vxe.hpp"
 #else
   #warning "unsupported vLLM cpu implementation"
 #endif
