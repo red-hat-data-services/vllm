@@ -164,7 +164,7 @@ RUN microdnf install -y --nodocs gcc \
 RUN --mount=type=bind,from=build,src=/workspace/dist,target=/workspace/dist \
     --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
-    uv pip install "$(echo dist/*.whl)[tensorizer]" --verbose
+    uv pip install "$(echo dist/*.whl)[audio,video,tensorizer]" --verbose
 
 # Install libsodium for Tensorizer encryption
 RUN --mount=type=bind,from=libsodium-builder,src=/usr/src/libsodium,target=/usr/src/libsodium \
@@ -217,7 +217,7 @@ USER root
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,from=build,src=/workspace/dist,target=/workspace/dist \
-    HOME=/root uv pip install "$(echo /workspace/dist/*.whl)[tensorizer]" vllm-tgis-adapter==0.6.3
+    HOME=/root uv pip install "$(echo /workspace/dist/*.whl)[audio,video,tensorizer]" vllm-tgis-adapter==0.6.3
 
 ENV GRPC_PORT=8033 \
     PORT=8000 \
