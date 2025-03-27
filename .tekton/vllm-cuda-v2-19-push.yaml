@@ -30,10 +30,6 @@ spec:
     value: Dockerfile.ubi
   - name: path-context
     value: .
-  - name: additional-build-secret
-    value: rhel-ai-private-index-auth
-  - name: build-args-file
-    value: argfile.konflux
   taskRunSpecs:
     - pipelineTaskName: ecosystem-cert-preflight-checks
       computeResources:
@@ -298,8 +294,6 @@ spec:
           - $(params.build-platforms)
       name: build-images
       params:
-      - name: ADDITIONAL_SECRET
-        value: $(params.additional-build-secret)
       - name: IMAGE
         value: $(params.output-image)
       - name: DOCKERFILE
