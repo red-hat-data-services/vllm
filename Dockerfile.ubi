@@ -32,7 +32,6 @@ ENV PYTHON_VERSION=${PYTHON_VERSION}
 RUN microdnf install -y --nodocs \
     python${PYTHON_VERSION}-devel  && \
     python${PYTHON_VERSION} -m venv $VIRTUAL_ENV && \
-    pip install --no-cache -U pip wheel uv && \
     microdnf clean all
 
 
@@ -113,17 +112,14 @@ COPY examples/*.jinja /app/data/template/
 
 # install vllm by running the payload script and then install flashinfer
 
-ARG VLLM_WHEEL_VERSION
-ARG VLLM_WHEEL_INDEX
-ARG FLASHINFER_VERSION
+ARG WHEEL_RELEASE
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,src=payload,target=/workspace/payload \
     --mount=type=secret,id=rhel-ai-private-index-auth/BOT_PAT \
+        source ${VIRTUAL_ENV}/bin/activate && \
         env BOT_PAT=$(cat /run/secrets/rhel-ai-private-index-auth/BOT_PAT) \
-            VLLM_WHEEL_VERSION=${VLLM_VERSION} \
-            VLLM_WHEEL_INDEX=${VLLM_WHEEL_INDEX} \
-        ./payload/run.sh && \
-        uv pip install "${FLASHINFER_VERSION}" 
+        WHEEL_RELEASE=${WHEEL_RELEASE} \
+        ./payload/run.sh
 
 ENV HF_HUB_OFFLINE=1 \
     HOME=/home/vllm \
@@ -161,17 +157,15 @@ FROM vllm-openai AS vllm-grpc-adapter
 
 USER root
 
-ARG VLLM_TGIS_ADAPTER_VERSION
+ARG WHEEL_RELEASE
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,src=payload,target=/workspace/payload \
     --mount=type=secret,id=rhel-ai-private-index-auth/BOT_PAT \
     cd /workspace && \
-    ls && \
+    source ${VIRTUAL_ENV}/bin/activate && \
     env HOME=/root \
         BOT_PAT=$(cat /run/secrets/rhel-ai-private-index-auth/BOT_PAT) \
-        VLLM_WHEEL_VERSION=${VLLM_VERSION} \
-        VLLM_TGIS_ADAPTER_VERSION=${VLLM_TGIS_ADAPTER_VERSION} \
-        VLLM_WHEEL_INDEX=${VLLM_WHEEL_INDEX} \
+        WHEEL_RELEASE=${WHEEL_RELEASE} \
         ./payload/run.sh
 
 

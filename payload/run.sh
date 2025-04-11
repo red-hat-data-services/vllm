@@ -1,10 +1,9 @@
 #!/bin/bash
+# Script assumes python venv is already properly configured
 # required env vars:
 # $BOT_PAT
-# $WHEEL_RELEASE_ARTIFACTS
-# optional:
-# $VLLM_TGIS_ADAPTER_VERSION
-# $VLLM_WHEEL_VERSION
+# $WHEEL_RELEASE
+# $WHEEL_BASEURL
 set -ex
 
 cat <<EOF > ${HOME}/.netrc
@@ -13,22 +12,17 @@ login rhel-ai-wheels-prefetch-token-rhoai
 password $BOT_PAT
 EOF
 
-trap "rm ${HOME}/.netrc" EXIT
+trap "rm -rf ${HOME}/.netrc release release.tar.gz" EXIT
 
-# https://docs.astral.sh/uv/configuration/indexes/#searching-across-multiple-indexes
-# This will prefer to use the custom index, and fall back to pypi if needed
-export UV_EXTRA_INDEX_URL=${VLLM_WHEEL_INDEX}
-export UV_INDEX_STRATEGY=unsafe-first-match 
+# WHEEL_RELEASE="2.20.55+vllm-cuda-ubi9-x86_64"
 
-vllm="vllm[tensorizer,audio,video]"
+# Gitlab project ID, etc should be static 
+WHEEL_RELEASE_ARTIFACTS="https://gitlab.com/api/v4/projects/68045055/packages/generic/rhelai-wheels/${WHEEL_RELEASE}/wheels-${WHEEL_RELEASE}.tar.gz"
 
-if [[ -n "$VLLM_TGIS_ADAPTER_VERSION" ]]; then
-    vllm_tgis_adapter="vllm-tgis-adapter==${VLLM_TGIS_ADAPTER_VERSION}"
-fi
 
-if [[ -n "$VLLM_WHEEL_VERSION" ]]; then
-    vllm="${vllm}==${$VLLM_WHEEL_VERSION}"
-fi
+# NOTE - ensure that flashinfer is included in wheel thing
 
-uv pip install $vllm $vllm_tgis_adapter
+curl --netrc -o release.tar.gz ${WHEEL_RELEASE_ARTIFACTS} 
+tar zxvf release.tar.gz 
+./release/install_wheels.sh
 
