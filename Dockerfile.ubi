@@ -1,6 +1,6 @@
-
-ARG BASE_UBI_IMAGE_TAG
-ARG PYTHON_VERSION
+## Global Args #################################################################
+ARG BASE_UBI_IMAGE_TAG=9.5-1742914212
+ARG PYTHON_VERSION=3.12
 
 ## Base Layer ##################################################################
 FROM registry.access.redhat.com/ubi9/ubi-minimal:${BASE_UBI_IMAGE_TAG} AS base
