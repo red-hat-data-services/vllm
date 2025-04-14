@@ -28,6 +28,8 @@ spec:
     value: Dockerfile.ubi
   - name: path-context
     value: .
+  - name: build-args-file
+    value: argfiles/argfile.ubi
   taskRunSpecs:
     - pipelineTaskName: ecosystem-cert-preflight-checks
       computeResources:
