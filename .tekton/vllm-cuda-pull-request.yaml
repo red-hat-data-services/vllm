@@ -300,6 +300,8 @@ spec:
           - $(params.build-platforms)
       name: build-images
       params:
+      - name: ADDITIONAL_SECRET
+        value: $(params.additional-build-secret)
       - name: IMAGE
         value: $(params.output-image)
       - name: DOCKERFILE
