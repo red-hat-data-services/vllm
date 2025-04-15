@@ -14,7 +14,7 @@ metadata:
     appstudio.openshift.io/application: external-rhoai-v2-20
     appstudio.openshift.io/component: vllm-cuda-v2-20
     pipelines.appstudio.openshift.io/type: build
-  name: vllm-cuda-v2-20-on-push
+  name: vllm-cuda-wheels-on-pull-request
   namespace: rhoai-tenant
 spec:
   params:
@@ -30,6 +30,8 @@ spec:
     value: .
   - name: build-args-file
     value: argfiles/argfile.ubi
+  - name: additional-build-secret
+    value: rhel-ai-private-index-auth
   taskRunSpecs:
     - pipelineTaskName: ecosystem-cert-preflight-checks
       computeResources:
