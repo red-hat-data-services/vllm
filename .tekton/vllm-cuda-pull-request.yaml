@@ -5,8 +5,10 @@ metadata:
     build.appstudio.openshift.io/repo: https://github.com/red-hat-data-services/vllm?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-comment: "^/build"
+    pipelinesascode.tekton.dev/cancel-in-progress: "true"
     pipelinesascode.tekton.dev/on-cel-expression: |
       false 
   creationTimestamp: null
@@ -18,6 +20,8 @@ metadata:
   namespace: rhoai-tenant
 spec:
   params:
+  - name: image-expires-after
+    value: 5d
   - name: git-url
     value: '{{source_url}}'
   - name: revision
