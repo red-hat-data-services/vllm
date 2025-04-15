@@ -4,7 +4,7 @@
 # $BOT_PAT
 # $WHEEL_RELEASE
 # $WHEEL_BASEURL
-set -ex
+set -eux
 
 cat <<EOF > ${HOME}/.netrc
 machine gitlab.com
