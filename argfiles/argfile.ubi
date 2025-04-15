@@ -1,0 +1,5 @@
+BASE_UBI_IMAGE_TAG=9.5-1739420147
+PYTHON_VERSION=3.11
+LIBSODIUM_VERSION=1.0.20
+WHEEL_RELEASE=2.20.55+vllm-cuda-ubi9-x86_64
+# can view releases at https://gitlab.com/redhat/rhel-ai/rhoai/pipeline/-/releases
