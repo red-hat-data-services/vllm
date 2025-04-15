@@ -152,6 +152,9 @@ spec:
       description: Path to a file with build arguments for buildah, see https://www.mankier.com/1/buildah-build#--build-arg-file
       name: build-args-file
       type: string
+    - description: Kubernetes secret to mount into build, see https://www.redhat.com/en/blog/sensitive-data-containers 
+      name: additional-build-secret
+      type: string
     - default:
       - linux-extra-fast/amd64
       description: List of platforms to build the container images on. The available
