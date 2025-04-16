@@ -148,7 +148,7 @@ spec:
       description: Path to a file with build arguments for buildah, see https://www.mankier.com/1/buildah-build#--build-arg-file
       name: build-args-file
       type: string
-    - default: "" 
+    - default: "does-not-exist" 
       description: Kubernetes secret to mount into build, see https://www.redhat.com/en/blog/sensitive-data-containers 
       name: additional-build-secret
       type: string
