@@ -42,7 +42,7 @@ spec:
     value: false
   - name: build-args
     value: 
-      - max_jobs=12
+      - max_jobs=6
       - nvcc_threads=2
   - name: fetch-git-tags
     value: true
