@@ -19,6 +19,8 @@ metadata:
   name: vllm-cuda-wheels-on-pull-request
   namespace: rhoai-tenant
 spec:
+  timeouts:
+    pipeline: 4h
   params:
   - name: image-expires-after
     value: 5d
