@@ -20,7 +20,8 @@ metadata:
   namespace: rhoai-tenant
 spec:
   timeouts:
-    pipeline: 4h
+    pipeline: 8h
+    tasks: 4h
   params:
   - name: image-expires-after
     value: 5d
