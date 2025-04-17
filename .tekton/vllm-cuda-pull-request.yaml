@@ -16,7 +16,7 @@ metadata:
     appstudio.openshift.io/application: external-rhoai-v2-20
     appstudio.openshift.io/component: vllm-cuda-v2-20
     pipelines.appstudio.openshift.io/type: build
-  name: vllm-cuda-wheels-on-pull-request
+  name: vllm-cuda-on-pull-request
   namespace: rhoai-tenant
 spec:
   timeouts:
@@ -39,7 +39,7 @@ spec:
   - name: build-source-image
     value: false
   - name: build-image-index
-    value: true
+    value: false
   - name: build-args
     value: [max_jobs=48]
   - name: fetch-git-tags
