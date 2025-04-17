@@ -41,7 +41,9 @@ spec:
   - name: build-image-index
     value: false
   - name: build-args
-    value: [max_jobs=48]
+    value: 
+      - max_jobs=12
+      - nvcc_threads=2
   - name: fetch-git-tags
     value: true
   - name: clone-depth
