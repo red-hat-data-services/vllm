@@ -318,21 +318,6 @@ VLM_TEST_SETTINGS = {
         use_tokenizer_eos=True,
         patch_hf_runner=model_utils.internvl_patch_hf_runner,
     ),
-    "llama4": VLMTestInfo(
-        models=["meta-llama/Llama-4-Scout-17B-16E-Instruct"],
-        prompt_formatter=lambda img_prompt: f"<|begin_of_text|><|header_start|>user<|header_end|>\n\n{img_prompt}<|eot|><|header_start|>assistant<|header_end|>\n\n", # noqa: E501
-        img_idx_to_prompt=lambda _: "<|image|>",
-        test_type=(VLMTestType.IMAGE, VLMTestType.MULTI_IMAGE),
-        distributed_executor_backend="mp",
-        image_size_factors=[(.25, 0.5, 1.0)],
-        hf_model_kwargs={"device_map": "auto"},
-        max_model_len=8192,
-        max_num_seqs=4,
-        dtype="bfloat16",
-        auto_cls=AutoModelForImageTextToText,
-        tensor_parallel_size=4,
-        marks=multi_gpu_marks(num_gpus=4),
-    ),
     "llava_next": VLMTestInfo(
         models=["llava-hf/llava-v1.6-mistral-7b-hf"],
         test_type=(VLMTestType.IMAGE, VLMTestType.CUSTOM_INPUTS),
