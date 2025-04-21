@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Inference-only LLaMA model compatible with HuggingFace weights."""
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, Type
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 import torch
 from torch import nn
@@ -36,8 +36,8 @@ from vllm.model_executor.layers.quantization import QuantizationConfig
 from vllm.model_executor.layers.rotary_embedding import get_rope
 from vllm.model_executor.model_loader.weight_utils import default_weight_loader
 
-from .llama import LlamaDecoderLayer, LlamaForCausalLM, LlamaMLP, LlamaModel
-from .utils import (AutoWeightsLoader, extract_layer_index,
+from .llama import LlamaForCausalLM, LlamaMLP, LlamaModel
+from .utils import (AutoWeightsLoader, extract_layer_index, fast_topk,
                     is_pp_missing_parameter)
 
 
@@ -50,7 +50,7 @@ class Llama4MoE(nn.Module):
         topk: int,
         renormalize: bool,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        router_scores, router_indices = torch.topk(gating_output, topk, dim=-1)
+        router_scores, router_indices = fast_topk(gating_output, topk, dim=-1)
         router_scores = torch.sigmoid(router_scores.float()).to(
             hidden_states.dtype)
         return (router_scores, router_indices.to(torch.int32))
@@ -155,14 +155,8 @@ class Llama4Attention(nn.Module):
         self.rope_theta = rope_theta
         self.max_position_embeddings = max_position_embeddings
         self.n_rep = self.num_heads // self.num_kv_heads
-        self.q_norm = RMSNorm(
-            hidden_size=self.q_size,
-            eps=config.rms_norm_eps,
-            has_weight=False,
-            dtype=torch.float32,
-        ) if self.use_qk_norm else None
-        self.k_norm = RMSNorm(
-            hidden_size=self.kv_size,
+        self.qk_norm = RMSNorm(
+            hidden_size=self.head_dim,
             eps=config.rms_norm_eps,
             has_weight=False,
             dtype=torch.float32,
@@ -226,10 +220,11 @@ class Llama4Attention(nn.Module):
 
         if self.rotary_emb is not None:
             q, k = self.rotary_emb(positions, q, k)
-        if self.q_norm is not None:
-            q = self.q_norm(q.float()).to(q.dtype)
-        if self.k_norm is not None:
-            k = self.k_norm(k.float()).to(k.dtype)
+        if self.qk_norm is not None:
+            q = q.reshape(-1, self.num_heads, self.head_dim)
+            q = self.qk_norm(q.float()).reshape(-1, self.q_size).to(q.dtype)
+            k = k.reshape(-1, self.num_kv_heads, self.head_dim)
+            k = self.qk_norm(k.float()).reshape(-1, self.kv_size).to(k.dtype)
 
         # We are applying temperature tuning (https://arxiv.org/abs/2501.19399)
         # to NoPE layers, where the inference-time temperature tuning function
@@ -247,7 +242,7 @@ class Llama4Attention(nn.Module):
         return output
 
 
-class Llama4DecoderLayer(LlamaDecoderLayer):
+class Llama4DecoderLayer(nn.Module):
 
     def __init__(
         self,
@@ -256,8 +251,9 @@ class Llama4DecoderLayer(LlamaDecoderLayer):
         quant_config: Optional[QuantizationConfig] = None,
         prefix: str = "",
     ) -> None:
+        super().__init__()
+
         self.layer_idx = extract_layer_index(prefix)
-        nn.Module.__init__(self)
         self.hidden_size = config.hidden_size
         rope_theta = config.rope_theta
         rope_scaling = config.rope_scaling
@@ -329,7 +325,7 @@ class Llama4Model(LlamaModel):
                  *,
                  vllm_config: VllmConfig,
                  prefix: str = "",
-                 layer_type: Type[Llama4DecoderLayer] = Llama4DecoderLayer):
+                 layer_type: type[Llama4DecoderLayer] = Llama4DecoderLayer):
         self.num_experts = vllm_config.model_config.hf_config.num_local_experts
         super().__init__(vllm_config=vllm_config,
                          prefix=prefix,
@@ -471,20 +467,24 @@ class Llama4ForCausalLM(LlamaForCausalLM):
     }
 
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
-        # Update temperature tuning config from generation config
+        # update temperature tuning config from generation config
         gen_config = vllm_config.model_config.try_get_generation_config()
         gen_config.update(vllm_config.model_config.override_generation_config)
+        # enable temperature tuning by default when max_model_len > 32K
+        default_attn_temperature_tuning = \
+            vllm_config.model_config.max_model_len > 32768
         vllm_config.model_config.hf_config.attn_temperature_tuning \
-            = gen_config.get("attn_temperature_tuning", False)
-        LlamaForCausalLM.__init__(self,
-                                  vllm_config=vllm_config,
-                                  prefix=prefix,
-                                  layer_type=Llama4DecoderLayer)
+            = gen_config.get(
+                "attn_temperature_tuning", default_attn_temperature_tuning)
+
+        super().__init__(vllm_config=vllm_config,
+                         prefix=prefix,
+                         layer_type=Llama4DecoderLayer)
 
     def _init_model(self,
                     vllm_config: VllmConfig,
                     prefix: str = "",
-                    layer_type: Type[Llama4DecoderLayer] = Llama4DecoderLayer):
+                    layer_type: type[Llama4DecoderLayer] = Llama4DecoderLayer):
         return Llama4Model(vllm_config=vllm_config,
                            prefix=prefix,
                            layer_type=layer_type)

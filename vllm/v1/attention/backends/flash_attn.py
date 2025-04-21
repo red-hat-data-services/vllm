@@ -10,7 +10,7 @@ from vllm import _custom_ops as ops
 from vllm.attention.backends.abstract import (AttentionBackend, AttentionImpl,
                                               AttentionMetadata, AttentionType,
                                               is_quantized_kv_cache)
-from vllm.attention.ops.triton_merge_attn_states import merge_attn_states
+from vllm.attention.ops.merge_attn_states import merge_attn_states
 from vllm.logger import init_logger
 from vllm.platforms import current_platform
 from vllm.utils import cdiv
@@ -164,9 +164,9 @@ def make_local_attention_virtual_batches(
     attn_chunk_size: int,
     query_start_loc_np: np.ndarray,
     seq_lens_np: np.ndarray,
-    block_table: torch.tensor,
+    block_table: torch.Tensor,
     page_size: int = 0,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, torch.tensor]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, torch.Tensor]:
     q_seqlens = query_start_loc_np[1:] - query_start_loc_np[:-1]
     actual_batch_size = seq_lens_np.shape[0]
 
@@ -264,7 +264,7 @@ def make_local_attention_virtual_batches(
         np.arange(pages_per_local_batch, dtype=np.int32),
         (virtual_batches, pages_per_local_batch)) \
             + np.expand_dims(block_starts, axis=1)
-    block_indices = block_indices.flatten()
+    block_indices = block_indices.flatten().clip(max=block_table.shape[1] - 1)
     batch_indices = np.repeat(np.arange(actual_batch_size, dtype=np.int32),
                               local_blocks * pages_per_local_batch)
     block_table_local = block_table[batch_indices, block_indices]\
