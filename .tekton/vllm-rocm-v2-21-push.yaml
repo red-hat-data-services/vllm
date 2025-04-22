@@ -6,37 +6,32 @@ metadata:
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    build.appstudio.openshift.io/build-nudge-files: "config/base/params.env"
+    build.appstudio.openshift.io/build-nudge-files: "config/base/params-vllm-rocm.env"
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "push"
       && target_branch == "rhoai-2.21"
-      && ( !".tekton/**".pathChanged() || ".tekton/vllm-cuda-v2-21-push.yaml".pathChanged() )
+      && ( !".tekton/**".pathChanged() || ".tekton/vllm-rocm-v2-21-push.yaml".pathChanged() )
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: external-rhoai-v2-21
-    appstudio.openshift.io/component: vllm-cuda-v2-21
+    appstudio.openshift.io/component: vllm-rocm-v2-21
     pipelines.appstudio.openshift.io/type: build
-  name: vllm-cuda-v2-21-on-push
+  name: vllm-rocm-v2-21-on-push
   namespace: rhoai-tenant
 spec:
   timeouts:
     pipeline: 8h
-    tasks: 4h
   params:
   - name: git-url
     value: '{{source_url}}'
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/modh/vllm:{{target_branch}}-cuda
+    value: quay.io/modh/vllm:{{target_branch}}-rocm
   - name: dockerfile
-    value: Dockerfile.ubi
+    value: Dockerfile.rocm.ubi
   - name: path-context
     value: .
-  - name: build-args
-    value: 
-      - max_jobs=6
-      - nvcc_threads=2
   taskRunSpecs:
     - pipelineTaskName: ecosystem-cert-preflight-checks
       computeResources:
@@ -79,9 +74,9 @@ spec:
       - name: message
         value: "$(tasks.rhoai-init.results.slack-message-failure-text)"
       - name: secret-name
-        value: rhoai-slack-webhook-secret
+        value: rhoai-konflux-secret
       - name: key-name
-        value: rhoai-slack-webhook-key
+        value: slack-webhook
       taskRef:
         params:
         - name: name
@@ -145,7 +140,7 @@ spec:
       description: Add built image into an OCI image index
       name: build-image-index
       type: string
-    - default: []
+    - default: [max_jobs=48]
       description: Array of --build-arg values ("arg=value" strings) for buildah
       name: build-args
       type: array
@@ -188,7 +183,7 @@ spec:
           - name: slack_message
             valueFrom:
               secretKeyRef:
-                name: rhoai-slack-message
+                name: rhoai-konflux-secret
                 key: slack-component-failure-notification
           script: |
             pipelinerun_name=$(params.pipelinerun-name)
@@ -470,6 +465,7 @@ spec:
         values:
         - "false"
     - name: ecosystem-cert-preflight-checks
+      timeout: 2h
       params:
       - name: image-url
         value: $(tasks.build-image-index.results.IMAGE_URL)
@@ -516,6 +512,7 @@ spec:
         values:
         - "false"
     - name: clamav-scan
+      timeout: 2h
       params:
       - name: image-digest
         value: $(tasks.build-image-index.results.IMAGE_DIGEST)
@@ -625,7 +622,7 @@ spec:
         value: $(tasks.build-image-index.results.IMAGE_URL)
       - name: ADDITIONAL_TAGS
         value:
-          - '{{target_branch}}-cuda-{{revision}}'
+          - '{{target_branch}}-rocm-{{revision}}'
       runAfter:
       - build-image-index
       taskRef:
@@ -693,4 +690,3 @@ spec:
     secret:
       secretName: '{{ git_auth_secret }}'
 status: {}
-#restart

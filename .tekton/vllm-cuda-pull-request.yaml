@@ -1,0 +1,87 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  annotations:
+    build.appstudio.openshift.io/repo: https://github.com/red-hat-data-services/vllm?rev={{revision}}
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    pipelinesascode.tekton.dev/max-keep-runs: "3"
+    pipelinesascode.tekton.dev/on-comment: "^/build-from-odh"
+    pipelinesascode.tekton.dev/cancel-in-progress: "true"
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      false 
+  creationTimestamp: null
+  labels:
+    appstudio.openshift.io/application: external-rhoai-v2-20
+    appstudio.openshift.io/component: vllm-cuda-v2-20
+    pipelines.appstudio.openshift.io/type: build
+  name: vllm-cuda-on-pull-request
+  namespace: rhoai-tenant
+spec:
+  timeouts:
+    pipeline: 8h
+    tasks: 4h
+  params:
+  - name: image-expires-after
+    value: 5d
+  - name: git-url
+    value: '{{source_url}}'
+  - name: revision
+    value: '{{revision}}'
+  - name: output-image
+    value: quay.io/modh/vllm:on-pr-cuda-{{revision}}
+  - name: dockerfile
+    value: Dockerfile.ubi
+  - name: path-context
+    value: .
+  - name: hermetic
+    value: false
+  - name: build-source-image
+    value: false
+  - name: build-image-index
+    value: false
+  - name: build-args
+    value: 
+      - max_jobs=6
+      - nvcc_threads=2
+  - name: fetch-git-tags
+    value: true
+  - name: clone-depth
+    value: "2147483647"
+  - name: build-platforms
+    value: 
+      - linux-extra-fast/amd64
+  taskRunSpecs:
+    - pipelineTaskName: ecosystem-cert-preflight-checks
+      computeResources:
+        requests:
+          cpu: '8'
+          memory: 16Gi
+        limits:
+          cpu: '16'
+          memory: 32Gi
+    - pipelineTaskName: clair-scan
+      computeResources:
+        requests:
+          cpu: '8'
+          memory: 16Gi
+        limits:
+          cpu: '16'
+          memory: 32Gi
+  pipelineRef:
+    resolver: git
+    params:
+    - name: url
+      value: https://github.com/red-hat-data-services/rhoai-konflux-tasks.git
+    - name: revision
+      value: vllm
+    - name: pathInRepo
+      value: pipelines/container-build-remote.yaml
+  taskRunTemplate: {}
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
+status: {}
+
