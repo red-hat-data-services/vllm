@@ -41,6 +41,8 @@ spec:
     value: false
   - name: build-image-index
     value: true
+  - name: rebuild
+    value: true
   - name: skip-checks
     value: true
   - name: build-args
