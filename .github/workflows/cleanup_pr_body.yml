@@ -1,8 +1,7 @@
 name: Cleanup PR Body
 
 on:
-  pull_request_target:
-    types: [opened, reopened, edited]
+    workflow_dispatch:
 
 permissions:
   pull-requests: write

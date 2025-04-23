@@ -10,7 +10,8 @@ import asyncio
 import json
 import ssl
 from argparse import Namespace
-from typing import Any, AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
+from typing import Any, Optional
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
@@ -128,6 +129,7 @@ async def run_server(args: Namespace,
     shutdown_task = await serve_http(
         app,
         sock=None,
+        enable_ssl_refresh=args.enable_ssl_refresh,
         host=args.host,
         port=args.port,
         log_level=args.log_level,
@@ -152,6 +154,11 @@ if __name__ == "__main__":
                         type=str,
                         default=None,
                         help="The CA certificates file")
+    parser.add_argument(
+        "--enable-ssl-refresh",
+        action="store_true",
+        default=False,
+        help="Refresh SSL Context when SSL certificate files change")
     parser.add_argument(
         "--ssl-cert-reqs",
         type=int,
