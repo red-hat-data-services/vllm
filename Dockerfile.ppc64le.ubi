@@ -54,7 +54,7 @@ FROM base-builder AS torch-builder
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,src=requirements/common.txt,dst=/requirements/common.txt,ro \
     source /opt/rh/gcc-toolset-13/enable && \
-    sed -e 's/.*opencv.*//g; s/.*outlines.*//g; s/.*tensors.*//g' requirements/common.txt | uv pip install -r /dev/stdin && \
+    sed -e 's/.*opencv.*//g; s/.*outlines.*//g; s/.*tensors.*//g; s/.*hf_xet.*//g' /requirements/common.txt | uv pip install -r /dev/stdin && \
     uv pip list
 
 ARG MAX_JOBS
@@ -316,7 +316,7 @@ FROM vllm-openai as vllm-grpc-adapter
 
 USER root
 
-ARG VLLM_TGIS_ADAPTER_VERSION
+ARG VLLM_TGIS_ADAPTER_VERSION=0.7.0
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,from=vllmcache-builder,source=/vllmwheel/,target=/vllmwheel/,ro \
     HOME=/root uv pip install "$(echo /vllmwheel/*.whl)[tensorizer]" vllm-tgis-adapter==${VLLM_TGIS_ADAPTER_VERSION}
