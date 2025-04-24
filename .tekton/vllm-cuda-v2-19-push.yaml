@@ -19,6 +19,9 @@ metadata:
   name: vllm-cuda-v2-19-on-push
   namespace: rhoai-tenant
 spec:
+  timeouts:
+    pipeline: 8h
+    tasks: 4h
   params:
   - name: git-url
     value: '{{source_url}}'
@@ -30,10 +33,10 @@ spec:
     value: Dockerfile.ubi
   - name: path-context
     value: .
-  - name: additional-build-secret
-    value: rhel-ai-private-index-auth
-  - name: build-args-file
-    value: argfile.konflux
+  - name: build-args
+    value: 
+      - max_jobs=6
+      - nvcc_threads=2
   taskRunSpecs:
     - pipelineTaskName: ecosystem-cert-preflight-checks
       computeResources:
