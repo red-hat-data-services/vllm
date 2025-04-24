@@ -98,6 +98,22 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     python setup.py bdist_wheel && \
     uv pip install dist/*.whl
 
+FROM python-install AS hf-xet-builder
+# Install hf-xet
+WORKDIR /tmp
+ENV CARGO_HOME=/root/.cargo
+ENV RUSTUP_HOME=/root/.rustup
+ENV PATH="$CARGO_HOME/bin:$RUSTUP_HOME/bin:$PATH"
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,from=rust,source=/root/.cargo,target=/root/.cargo,rw \
+    --mount=type=bind,from=rust,source=/root/.rustup,target=/root/.rustup,rw \
+    git clone https://github.com/huggingface/xet-core.git && \
+    cd xet-core/hf_xet/ && \
+    uv pip install maturin patchelf && \
+    python -m maturin build --release --out dist && \
+    mkdir -p /tmp/hf-xet/dist && \
+    cp dist/*.whl /tmp/hf-xet/dist/
+
 # Final build stage
 FROM python-install AS vllm-openai
 ARG PYTHON_VERSION
@@ -118,12 +134,15 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,from=rust,source=/root/.cargo,target=/root/.cargo,rw \
     --mount=type=bind,from=rust,source=/root/.rustup,target=/root/.rustup,rw \
     --mount=type=bind,from=pyarrow,source=/tmp/arrow/python/dist,target=/tmp/arrow-wheels \
+    --mount=type=bind,from=hf-xet-builder,source=/tmp/hf-xet/dist,target=/tmp/hf-xet-wheels/ \
     export PATH="/root/.cargo/bin:/root/.rustup/bin:$PATH" \
            ARROW_WHL_FILE=$(ls /tmp/arrow-wheels/pyarrow-*.whl | head -n 1) && \
+           HF_XET_WHL_FILE=$(ls /tmp/hf-xet-wheels/*.whl | head -n 1) && \
      sed -i '/^torch/d' requirements/build.txt && \
      sed -i '/^numba/d' requirements/common.txt && \
     uv pip install -v \
         $ARROW_WHL_FILE \
+        $HF_XET_WHL_FILE \
         --extra-index-url https://download.pytorch.org/whl/nightly/cpu \
         --index-strategy unsafe-best-match \
         -r requirements/build.txt \
