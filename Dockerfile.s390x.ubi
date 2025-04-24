@@ -1,7 +1,7 @@
 # Base UBI image for s390x architecture
 ARG BASE_UBI_IMAGE_TAG=9.5-1741850109
 ARG PYTHON_VERSION=3.12
-ARG VLLM_TGIS_ADAPTER_VERSION="0.6.3"
+ARG VLLM_TGIS_ADAPTER_VERSION="0.7.0"
 FROM registry.access.redhat.com/ubi9/ubi-minimal:${BASE_UBI_IMAGE_TAG} AS base
 
 # Install basic dependencies
@@ -192,7 +192,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,from=rust,source=/root/.cargo,target=/root/.cargo,rw \
     --mount=type=bind,from=rust,source=/root/.rustup,target=/root/.rustup,rw \
     export PATH="$PATH:/root/.cargo/bin:/root/.rustup/bin" && \
-    HOME=/root uv pip install "$(echo /workspace/vllm/dist/*.whl)[tensorizer]" vllm-tgis-adapter==${VLLM_TGIS_ADAPTER_VERSION} && \   
+    HOME=/root uv pip install "$(echo /workspace/vllm/dist/*.whl)[tensorizer]" vllm-tgis-adapter==${VLLM_TGIS_ADAPTER_VERSION} && \ 
     cd /tmp && touch control
 
 FROM vllm-openai as vllm-grpc-adapter
