@@ -3,9 +3,10 @@ import asyncio
 import multiprocessing
 import signal
 from argparse import Namespace
+from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 from functools import partial
-from typing import Annotated, Any, AsyncGenerator, AsyncIterator
+from typing import Annotated, Any
 
 import numpy as np
 import uvloop
