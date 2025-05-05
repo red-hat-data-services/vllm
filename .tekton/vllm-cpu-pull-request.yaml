@@ -13,8 +13,8 @@ metadata:
       false 
   creationTimestamp: null
   labels:
-    appstudio.openshift.io/application: external-rhoai-v2-19
-    appstudio.openshift.io/component: vllm-cpu-v2-19
+    appstudio.openshift.io/application: automation
+    appstudio.openshift.io/component: pull-request-pipelines
     pipelines.appstudio.openshift.io/type: build
   name: vllm-ppc64le-on-pull-request
   namespace: rhoai-tenant
@@ -30,7 +30,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/modh/vllm:on-pr-cpu-{{revision}}
+    value: quay.io/redhat-user-workloads/rhoai-tenant/pull-request-pipelines:vllm-on-pr-cpu-{{revision}}
   - name: dockerfile
     value: Dockerfile.ppc64le.ubi
   - name: path-context
@@ -100,8 +100,8 @@ metadata:
       false 
   creationTimestamp: null
   labels:
-    appstudio.openshift.io/application: external-rhoai-v2-19
-    appstudio.openshift.io/component: vllm-cpu-v2-19
+    appstudio.openshift.io/application: automation
+    appstudio.openshift.io/component: pull-request-pipelines
     pipelines.appstudio.openshift.io/type: build
   name: vllm-s390x-on-pull-request
   namespace: rhoai-tenant
@@ -117,7 +117,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/modh/vllm:on-pr-cpu-{{revision}}
+    value: quay.io/redhat-user-workloads/rhoai-tenant/pull-request-pipelines:vllm-on-pr-cpu-{{revision}}
   - name: dockerfile
     value: Dockerfile.s390x.ubi
   - name: path-context
