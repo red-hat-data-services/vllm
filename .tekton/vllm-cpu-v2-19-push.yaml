@@ -80,7 +80,8 @@ spec:
       value: '{{ target_branch }}'
     - name: pathInRepo
       value: pipelines/vllm-cpu-container-build.yaml
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-vllm-cpu-v2-19
   workspaces:
   - name: git-auth
     secret:

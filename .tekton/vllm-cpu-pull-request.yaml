@@ -78,7 +78,8 @@ spec:
       value: vllm
     - name: pathInRepo
       value: pipelines/container-build-remote.yaml
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-pull-request-pipelines
   workspaces:
   - name: git-auth
     secret:
@@ -165,7 +166,8 @@ spec:
       value: vllm
     - name: pathInRepo
       value: pipelines/container-build-remote.yaml
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-pull-request-pipelines
   workspaces:
   - name: git-auth
     secret:

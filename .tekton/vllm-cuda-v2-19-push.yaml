@@ -83,7 +83,8 @@ spec:
       value: '{{ target_branch }}'
     - name: pathInRepo
       value: pipelines/multi-arch-container-build.yaml
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-vllm-cuda-v2-19
   workspaces:
   - name: git-auth
     secret:
