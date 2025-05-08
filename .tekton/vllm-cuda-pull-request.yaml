@@ -6,12 +6,12 @@ metadata:
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
-    pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-comment: "^/build-cuda"
-    pipelinesascode.tekton.dev/cancel-in-progress: "true"
+    pipelinesascode.tekton.dev/max-keep-runs: '3'
+    pipelinesascode.tekton.dev/on-comment: ^/build-cuda
+    pipelinesascode.tekton.dev/cancel-in-progress: 'true'
     pipelinesascode.tekton.dev/on-cel-expression: |
       false 
-  creationTimestamp: null
+  creationTimestamp:
   labels:
     appstudio.openshift.io/application: automation
     appstudio.openshift.io/component: pull-request-pipelines
@@ -30,7 +30,8 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/rhoai-tenant/pull-request-pipelines:vllm-on-pr-cuda-{{revision}}
+    value: 
+      quay.io/redhat-user-workloads/rhoai-tenant/pull-request-pipelines:vllm-on-pr-cuda-{{revision}}
   - name: dockerfile
     value: Dockerfile.ubi
   - name: path-context
@@ -46,33 +47,33 @@ spec:
   - name: skip-checks
     value: true
   - name: build-args
-    value: 
-      - max_jobs=6
-      - nvcc_threads=2
+    value:
+    - max_jobs=6
+    - nvcc_threads=2
   - name: fetch-git-tags
     value: true
   - name: clone-depth
-    value: "2147483647"
+    value: '2147483647'
   - name: build-platforms
-    value: 
-      - linux-extra-fast/amd64
+    value:
+    - linux-extra-fast/amd64
   taskRunSpecs:
-    - pipelineTaskName: ecosystem-cert-preflight-checks
-      computeResources:
-        requests:
-          cpu: '8'
-          memory: 16Gi
-        limits:
-          cpu: '16'
-          memory: 32Gi
-    - pipelineTaskName: clair-scan
-      computeResources:
-        requests:
-          cpu: '8'
-          memory: 16Gi
-        limits:
-          cpu: '16'
-          memory: 32Gi
+  - pipelineTaskName: ecosystem-cert-preflight-checks
+    computeResources:
+      requests:
+        cpu: '8'
+        memory: 16Gi
+      limits:
+        cpu: '16'
+        memory: 32Gi
+  - pipelineTaskName: clair-scan
+    computeResources:
+      requests:
+        cpu: '8'
+        memory: 16Gi
+      limits:
+        cpu: '16'
+        memory: 32Gi
   pipelineRef:
     resolver: git
     params:
