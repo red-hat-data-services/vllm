@@ -2,12 +2,12 @@ apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   annotations:
+    build.appstudio.openshift.io/build-nudge-files: config/base/params-vllm-cpu.env
     build.appstudio.openshift.io/repo: https://github.com/red-hat-data-services/vllm?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/cancel-in-progress: "false"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    build.appstudio.openshift.io/build-nudge-files: "config/base/params-vllm-cpu.env"
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "push"
       && target_branch == "rhoai-2.20"
@@ -20,8 +20,6 @@ metadata:
   name: vllm-cpu-v2-20-on-push
   namespace: rhoai-tenant
 spec:
-  timeouts:
-    pipeline: 8h
   params:
   - name: git-url
     value: '{{source_url}}'
@@ -77,8 +75,8 @@ spec:
       name: s390x-dockerfile
       type: string
     - default: Dockerfile
-      description: Path to the ppc64le Dockerfile inside the context specified by parameter
-        path-context
+      description: Path to the ppc64le Dockerfile inside the context specified by
+        parameter path-context
       name: ppc64le-dockerfile
       type: string
     - default: "false"
@@ -214,7 +212,6 @@ spec:
       - name: netrc
         workspace: netrc
     - name: build-ppc64le-image
-      timeout: 6h
       params:
       - name: PLATFORM
         value: linux-large/ppc64le
@@ -254,13 +251,13 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+      timeout: 6h0m0s
       when:
       - input: $(tasks.init.results.build)
         operator: in
         values:
         - "true"
     - name: build-s390x-image
-      timeout: 6h
       params:
       - name: PLATFORM
         value: linux-large/s390x
@@ -300,6 +297,7 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+      timeout: 6h0m0s
       when:
       - input: $(tasks.init.results.build)
         operator: in
@@ -409,7 +407,6 @@ spec:
         values:
         - "false"
     - name: ecosystem-cert-preflight-checks
-      timeout: 2h
       params:
       - name: image-url
         value: $(tasks.build-image-index.results.IMAGE_URL)
@@ -424,6 +421,7 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+      timeout: 2h0m0s
       when:
       - input: $(params.skip-checks)
         operator: in
@@ -456,7 +454,6 @@ spec:
         values:
         - "false"
     - name: clamav-scan
-      timeout: 2h
       params:
       - name: image-digest
         value: $(tasks.build-image-index.results.IMAGE_DIGEST)
@@ -473,6 +470,7 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+      timeout: 2h0m0s
       when:
       - input: $(params.skip-checks)
         operator: in
@@ -659,7 +657,10 @@ spec:
       optional: true
     - name: netrc
       optional: true
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-vllm-cpu-v2-20
+  timeouts:
+    pipeline: 8h0m0s
   workspaces:
   - name: git-auth
     secret:
