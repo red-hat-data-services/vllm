@@ -2,11 +2,11 @@ apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   annotations:
+    build.appstudio.openshift.io/build-nudge-files: .*.env, .*.json
     build.appstudio.openshift.io/repo: https://github.com/red-hat-data-services/vllm?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    build.appstudio.openshift.io/build-nudge-files: ".*.env, .*.json"
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "push"
       && target_branch == "rhoai-2.10"
@@ -30,23 +30,6 @@ spec:
     value: Dockerfile.ubi
   - name: path-context
     value: .
-  taskRunSpecs:
-    - pipelineTaskName: ecosystem-cert-preflight-checks
-      computeResources:
-        requests:
-          cpu: '2'
-          memory: 10Gi
-        limits:
-          cpu: '4'
-          memory: 20Gi
-    - pipelineTaskName: clair-scan
-      computeResources:
-        requests:
-          cpu: '2'
-          memory: 10Gi
-        limits:
-          cpu: '4'
-          memory: 20Gi
   pipelineSpec:
     description: |
       This pipeline is ideal for building multi-arch container images from a Containerfile while maintaining trust after pipeline customization.
@@ -116,7 +99,8 @@ spec:
       description: Add built image into an OCI image index
       name: build-image-index
       type: string
-    - default: [max_jobs=48]
+    - default:
+      - max_jobs=48
       description: Array of --build-arg values ("arg=value" strings) for buildah
       name: build-args
       type: array
@@ -443,7 +427,7 @@ spec:
         value: $(tasks.build-image-index.results.IMAGE_URL)
       - name: ADDITIONAL_TAGS
         value:
-          - '{{target_branch}}-cuda-{{revision}}'
+        - '{{target_branch}}-cuda-{{revision}}'
       runAfter:
       - build-image-index
       taskRef:
@@ -505,7 +489,25 @@ spec:
       optional: true
     - name: netrc
       optional: true
-  taskRunTemplate: {}
+  taskRunSpecs:
+  - computeResources:
+      limits:
+        cpu: "4"
+        memory: 20Gi
+      requests:
+        cpu: "2"
+        memory: 10Gi
+    pipelineTaskName: ecosystem-cert-preflight-checks
+  - computeResources:
+      limits:
+        cpu: "4"
+        memory: 20Gi
+      requests:
+        cpu: "2"
+        memory: 10Gi
+    pipelineTaskName: clair-scan
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-vllm-cuda-210
   workspaces:
   - name: git-auth
     secret:
