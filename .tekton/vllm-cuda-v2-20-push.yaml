@@ -2,11 +2,11 @@ apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   annotations:
+    build.appstudio.openshift.io/build-nudge-files: config/base/params.env
     build.appstudio.openshift.io/repo: https://github.com/red-hat-data-services/vllm?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    build.appstudio.openshift.io/build-nudge-files: "config/base/params.env"
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "push"
       && target_branch == "rhoai-2.20"
@@ -19,9 +19,6 @@ metadata:
   name: vllm-cuda-v2-20-on-push
   namespace: rhoai-tenant
 spec:
-  timeouts:
-    pipeline: 8h
-    tasks: 4h
   params:
   - name: git-url
     value: '{{source_url}}'
@@ -34,26 +31,9 @@ spec:
   - name: path-context
     value: .
   - name: build-args
-    value: 
-      - max_jobs=6
-      - nvcc_threads=2
-  taskRunSpecs:
-    - pipelineTaskName: ecosystem-cert-preflight-checks
-      computeResources:
-        requests:
-          cpu: '8'
-          memory: 16Gi
-        limits:
-          cpu: '16'
-          memory: 32Gi
-    - pipelineTaskName: clair-scan
-      computeResources:
-        requests:
-          cpu: '8'
-          memory: 16Gi
-        limits:
-          cpu: '16'
-          memory: 32Gi
+    value:
+    - max_jobs=6
+    - nvcc_threads=2
   pipelineSpec:
     description: |
       This pipeline is ideal for building multi-arch container images from a Containerfile while maintaining trust after pipeline customization.
@@ -77,7 +57,7 @@ spec:
     - name: send-slack-notification
       params:
       - name: message
-        value: "$(tasks.rhoai-init.results.slack-message-failure-text)"
+        value: $(tasks.rhoai-init.results.slack-message-failure-text)
       - name: secret-name
         value: rhoai-slack-webhook-secret
       - name: key-name
@@ -95,7 +75,7 @@ spec:
       - input: $(tasks.status)
         operator: in
         values:
-        - "Failed"  
+        - Failed
     params:
     - description: Source Repository URL
       name: git-url
@@ -176,30 +156,33 @@ spec:
     - name: rhoai-init
       params:
       - name: pipelinerun-name
-        value: "$(context.pipelineRun.name)"
+        value: $(context.pipelineRun.name)
       taskSpec:
+        metadata: {}
         results:
         - description: Notification text to be posted to slack
           name: slack-message-failure-text
+        spec: null
         steps:
-        - image: quay.io/rhoai-konflux/alpine:latest
-          name: rhoai-init
+        - computeResources: {}
           env:
           - name: slack_message
             valueFrom:
               secretKeyRef:
-                name: rhoai-slack-message
                 key: slack-component-failure-notification
+                name: rhoai-slack-message
+          image: quay.io/rhoai-konflux/alpine:latest
+          name: rhoai-init
           script: |
             pipelinerun_name=$(params.pipelinerun-name)
             echo "pipelinerun_name = $pipelinerun_name"
-            
+
             target_branch={{target_branch}}
             echo "target_branch = $target_branch"
 
             application_name=${target_branch/rhoai-/}
             echo "application-name = $application_name"
-            
+
             application_name=rhoai-v${application_name/./-}
             echo "application-name = $application_name"
 
@@ -224,6 +207,8 @@ spec:
         value: $(params.rebuild)
       - name: skip-checks
         value: $(params.skip-checks)
+      runAfter:
+      - rhoai-init
       taskRef:
         params:
         - name: name
@@ -233,8 +218,6 @@ spec:
         - name: kind
           value: task
         resolver: bundles
-      runAfter:
-      - rhoai-init
     - name: clone-repository
       params:
       - name: url
@@ -300,7 +283,6 @@ spec:
           value:
           - $(params.build-platforms)
       name: build-images
-      timeout: 4h
       params:
       - name: IMAGE
         value: $(params.output-image)
@@ -338,6 +320,7 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+      timeout: 4h0m0s
       when:
       - input: $(tasks.init.results.build)
         operator: in
@@ -402,29 +385,28 @@ spec:
         - "true"
     - name: sast-unicode-check
       params:
-        - name: image-url
-          value: $(tasks.build-image-index.results.IMAGE_URL)
-        - name: SOURCE_ARTIFACT
-          value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-        - name: CACHI2_ARTIFACT
-          value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+      - name: image-url
+        value: $(tasks.build-image-index.results.IMAGE_URL)
+      - name: SOURCE_ARTIFACT
+        value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+      - name: CACHI2_ARTIFACT
+        value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
       runAfter:
-        - build-image-index
+      - build-image-index
       taskRef:
         params:
-          - name: name
-            value: sast-unicode-check-oci-ta
-          - name: bundle
-            value: quay.io/konflux-ci/tekton-catalog/task-sast-unicode-check-oci-ta:0.2@sha256:df185dbe4e2852668f9c46f938dd752e90ea9c79696363378435a6499596c319
-          - name: kind
-            value: task
+        - name: name
+          value: sast-unicode-check-oci-ta
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-sast-unicode-check-oci-ta:0.2@sha256:df185dbe4e2852668f9c46f938dd752e90ea9c79696363378435a6499596c319
+        - name: kind
+          value: task
         resolver: bundles
       when:
-        - input: $(params.skip-checks)
-          operator: in
-          values:
-            - "false"
-      workspaces: []
+      - input: $(params.skip-checks)
+        operator: in
+        values:
+        - "false"
     - name: deprecated-base-image-check
       params:
       - name: IMAGE_URL
@@ -625,7 +607,7 @@ spec:
         value: $(tasks.build-image-index.results.IMAGE_URL)
       - name: ADDITIONAL_TAGS
         value:
-          - '{{target_branch}}-cuda-{{revision}}'
+        - '{{target_branch}}-cuda-{{revision}}'
       runAfter:
       - build-image-index
       taskRef:
@@ -687,10 +669,30 @@ spec:
       optional: true
     - name: netrc
       optional: true
-  taskRunTemplate: {}
+  taskRunSpecs:
+  - computeResources:
+      limits:
+        cpu: "16"
+        memory: 32Gi
+      requests:
+        cpu: "8"
+        memory: 16Gi
+    pipelineTaskName: ecosystem-cert-preflight-checks
+  - computeResources:
+      limits:
+        cpu: "16"
+        memory: 32Gi
+      requests:
+        cpu: "8"
+        memory: 16Gi
+    pipelineTaskName: clair-scan
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-vllm-cuda-v2-20
+  timeouts:
+    pipeline: 8h0m0s
+    tasks: 4h0m0s
   workspaces:
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
 status: {}
-#restart
