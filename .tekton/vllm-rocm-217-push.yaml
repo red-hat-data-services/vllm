@@ -2,11 +2,11 @@ apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   annotations:
+    build.appstudio.openshift.io/build-nudge-files: config/base/params-vllm-rocm.env
     build.appstudio.openshift.io/repo: https://github.com/red-hat-data-services/vllm?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    build.appstudio.openshift.io/build-nudge-files: "config/base/params-vllm-rocm.env"
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "push"
       && target_branch == "rhoai-2.17"
@@ -19,8 +19,6 @@ metadata:
   name: vllm-rocm-217-on-push
   namespace: rhoai-tenant
 spec:
-  timeouts:
-    pipeline: 8h
   params:
   - name: git-url
     value: '{{source_url}}'
@@ -32,23 +30,6 @@ spec:
     value: Dockerfile.rocm.ubi
   - name: path-context
     value: .
-  taskRunSpecs:
-    - pipelineTaskName: ecosystem-cert-preflight-checks
-      computeResources:
-        requests:
-          cpu: '8'
-          memory: 16Gi
-        limits:
-          cpu: '16'
-          memory: 32Gi
-    - pipelineTaskName: clair-scan
-      computeResources:
-        requests:
-          cpu: '8'
-          memory: 16Gi
-        limits:
-          cpu: '16'
-          memory: 32Gi
   pipelineSpec:
     description: |
       This pipeline is ideal for building multi-arch container images from a Containerfile while maintaining trust after pipeline customization.
@@ -118,7 +99,8 @@ spec:
       description: Add built image into an OCI image index
       name: build-image-index
       type: string
-    - default: [max_jobs=48]
+    - default:
+      - max_jobs=48
       description: Array of --build-arg values ("arg=value" strings) for buildah
       name: build-args
       type: array
@@ -228,7 +210,6 @@ spec:
           value:
           - $(params.build-platforms)
       name: build-images
-      timeout: 4h
       params:
       - name: IMAGE
         value: $(params.output-image)
@@ -264,6 +245,7 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+      timeout: 4h0m0s
       when:
       - input: $(tasks.init.results.build)
         operator: in
@@ -371,7 +353,6 @@ spec:
         values:
         - "false"
     - name: ecosystem-cert-preflight-checks
-      timeout: 2h
       params:
       - name: image-url
         value: $(tasks.build-image-index.results.IMAGE_URL)
@@ -386,6 +367,7 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+      timeout: 2h0m0s
       when:
       - input: $(params.skip-checks)
         operator: in
@@ -418,7 +400,6 @@ spec:
         values:
         - "false"
     - name: clamav-scan
-      timeout: 2h
       params:
       - name: image-digest
         value: $(tasks.build-image-index.results.IMAGE_DIGEST)
@@ -435,6 +416,7 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+      timeout: 2h0m0s
       when:
       - input: $(params.skip-checks)
         operator: in
@@ -552,7 +534,7 @@ spec:
         value: $(tasks.build-image-index.results.IMAGE_URL)
       - name: ADDITIONAL_TAGS
         value:
-          - '{{target_branch}}-rocm-{{revision}}'
+        - '{{target_branch}}-rocm-{{revision}}'
       runAfter:
       - build-image-index
       taskRef:
@@ -614,7 +596,27 @@ spec:
       optional: true
     - name: netrc
       optional: true
-  taskRunTemplate: {}
+  taskRunSpecs:
+  - computeResources:
+      limits:
+        cpu: "16"
+        memory: 32Gi
+      requests:
+        cpu: "8"
+        memory: 16Gi
+    pipelineTaskName: ecosystem-cert-preflight-checks
+  - computeResources:
+      limits:
+        cpu: "16"
+        memory: 32Gi
+      requests:
+        cpu: "8"
+        memory: 16Gi
+    pipelineTaskName: clair-scan
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-vllm-rocm-217
+  timeouts:
+    pipeline: 8h0m0s
   workspaces:
   - name: git-auth
     secret:
