@@ -71,12 +71,19 @@ struct enable_sm89_to_sm90 : Kernel {
 #endif
   }
 };
+
+using GemmUniversalMode = cutlass::gemm::GemmUniversalMode;
+
 template <typename Arch, template <typename> typename ArchGuard,
           typename ElementAB_, typename ElementD_,
           template <typename, typename> typename Epilogue_, typename TileShape,
           typename WarpShape, typename InstructionShape, int32_t MainLoopStages,
-          typename FP8MathOperator = cutlass::arch::OpMultiplyAdd>
+          typename FP8MathOperator = cutlass::arch::OpMultiplyAdd,
+          typename ThreadblockSwizzle =
+              cutlass::gemm::threadblock::ThreadblockSwizzleStreamK,
+          GemmUniversalMode Mode_ = GemmUniversalMode::kGemm>
 struct cutlass_2x_gemm {
+  static const GemmUniversalMode Mode = Mode_;
   using ElementAB = ElementAB_;
   using ElementD = ElementD_;
 
@@ -120,7 +127,7 @@ struct cutlass_2x_gemm {
       Arch,
       TileShape, WarpShape, InstructionShape,
       EVTD,
-      cutlass::gemm::threadblock::ThreadblockSwizzleStreamK,
+      ThreadblockSwizzle,
       MainLoopStages, Operator,
       1 /* epilogue stages */
       >::GemmKernel>;

@@ -1,7 +1,7 @@
 ## Global Args #################################################################
 ARG BASE_UBI_IMAGE_TAG=9.5-1742914212
 ARG PYTHON_VERSION=3.12
-
+ARG LIBSODIUM_VERSION=1.0.20
 ARG TORCH_CUDA_ARCH_LIST="7.0 7.5 8.0 8.6 8.9 9.0+PTX"
 ARG vllm_fa_cmake_gpu_arches='80-real;90-real'
 
@@ -33,7 +33,9 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 ENV PYTHON_VERSION=${PYTHON_VERSION}
 RUN microdnf install -y --nodocs \
     python${PYTHON_VERSION}-devel  && \
-    python${PYTHON_VERSION} -m venv $VIRTUAL_ENV && pip install --no-cache -U pip wheel uv && microdnf clean all
+    python${PYTHON_VERSION} -m venv $VIRTUAL_ENV && \
+    pip install --no-cache -U pip wheel uv && \
+    microdnf clean all
 
 
 ## CUDA Base ###################################################################
@@ -51,7 +53,6 @@ RUN microdnf install -y --nodocs \
     ln -s ${CUDA_HOME}/lib64/stubs/libcuda.so /usr/lib64/
 
 
-
 ## Python cuda base #################################################################
 FROM cuda-base AS python-cuda-base
 
@@ -59,37 +60,34 @@ ENV VIRTUAL_ENV=/opt/vllm
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # install cuda and common dependencies
-RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=requirements-common.txt,target=requirements-common.txt \
-    --mount=type=bind,source=requirements-cuda.txt,target=requirements-cuda.txt \
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=requirements/common.txt,target=requirements/common.txt \
+    --mount=type=bind,source=requirements/cuda.txt,target=requirements/cuda.txt \
     uv pip install \
-        -r requirements-cuda.txt
+        -r requirements/cuda.txt
 
 
 ## Development #################################################################
 FROM python-cuda-base AS dev
 
 # install build and runtime dependencies
-RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=requirements-common.txt,target=requirements-common.txt \
-    --mount=type=bind,source=requirements-cuda.txt,target=requirements-cuda.txt \
-    --mount=type=bind,source=requirements-dev.txt,target=requirements-dev.txt \
-    --mount=type=bind,source=requirements-lint.txt,target=requirements-lint.txt \
-    --mount=type=bind,source=requirements-test.txt,target=requirements-test.txt \
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=requirements/common.txt,target=requirements/common.txt \
+    --mount=type=bind,source=requirements/cuda.txt,target=requirements/cuda.txt \
+    --mount=type=bind,source=requirements/dev.txt,target=requirements/dev.txt \
+    --mount=type=bind,source=requirements/lint.txt,target=requirements/lint.txt \
+    --mount=type=bind,source=requirements/test.txt,target=requirements/test.txt \
     uv pip install \
-        -r requirements-cuda.txt \
-        -r requirements-dev.txt
+        -r requirements/cuda.txt \
+        -r requirements/dev.txt
 
 ## Builder #####################################################################
 FROM dev AS build
 
 # install build dependencies
-RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=requirements-build.txt,target=requirements-build.txt \
-    uv pip install -r requirements-build.txt
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=requirements/build.txt,target=requirements/build.txt \
+    uv pip install -r requirements/build.txt
 
 # install compiler cache to speed up compilation leveraging local or remote caching
 # git is required for the cutlass kernels
@@ -132,7 +130,7 @@ RUN microdnf install -y --nodocs gcc gzip \
 
 WORKDIR /usr/src/libsodium
 
-ARG LIBSODIUM_VERSION=1.0.20
+ARG LIBSODIUM_VERSION
 RUN curl -LO https://github.com/jedisct1/libsodium/releases/download/${LIBSODIUM_VERSION}-RELEASE/libsodium-${LIBSODIUM_VERSION}.tar.gz \
     && tar -xzvf libsodium*.tar.gz \
     && rm -f libsodium*.tar.gz \
@@ -162,19 +160,13 @@ RUN microdnf install -y --nodocs gcc \
 
 # install vllm wheel first, so that torch etc will be installed
 RUN --mount=type=bind,from=build,src=/workspace/dist,target=/workspace/dist \
-    --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
-    uv pip install "$(echo dist/*.whl)[tensorizer]" --verbose
+    uv pip install "$(echo dist/*.whl)[audio,video,tensorizer]" --verbose \
+    "https://github.com/flashinfer-ai/flashinfer/releases/download/v0.2.1.post2/flashinfer_python-0.2.1.post2+cu124torch2.6-cp38-abi3-linux_x86_64.whl"
 
 # Install libsodium for Tensorizer encryption
 RUN --mount=type=bind,from=libsodium-builder,src=/usr/src/libsodium,target=/usr/src/libsodium \
-    cd /usr/src/libsodium \
-    && make install
-
-RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=cache,target=/root/.cache/uv \
-    uv pip install \
-        "https://github.com/flashinfer-ai/flashinfer/releases/download/v0.2.0.post2/flashinfer_python-0.2.0.post2+cu124torch2.5-cp312-cp312-linux_x86_64.whl"
+    make -C /usr/src/libsodium install
 
 ENV HF_HUB_OFFLINE=1 \
     HOME=/home/vllm \
@@ -199,7 +191,8 @@ ENV HF_HUB_OFFLINE=1 \
 RUN umask 002 && \
     useradd --uid 2000 --gid 0 vllm && \
     mkdir -p /home/vllm && \
-    chmod g+rwx /home/vllm /usr/src /workspace
+    chown -R vllm /home/vllm && \
+    chmod g+rwx /home/vllm
 
 COPY LICENSE /licenses/vllm.md
 COPY examples/*.jinja /app/data/template/
@@ -214,10 +207,9 @@ FROM vllm-openai as vllm-grpc-adapter
 
 USER root
 
-RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,from=build,src=/workspace/dist,target=/workspace/dist \
-    HOME=/root uv pip install "$(echo /workspace/dist/*.whl)[tensorizer]" vllm-tgis-adapter==0.6.3
+    HOME=/root uv pip install "$(echo /workspace/dist/*.whl)[audio,video,tensorizer]" vllm-tgis-adapter==0.7.0
 
 ENV GRPC_PORT=8033 \
     PORT=8000 \
