@@ -1,5 +1,6 @@
 # Base UBI image for s390x architecture
 ARG BASE_UBI_IMAGE_TAG=9.5-1741850109
+ARG VLLM_VERSION=0.8.5
 ARG PYTHON_VERSION=3.12
 ARG VLLM_TGIS_ADAPTER_VERSION="0.7.0"
 FROM registry.access.redhat.com/ubi9/ubi-minimal:${BASE_UBI_IMAGE_TAG} AS base
@@ -150,6 +151,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # Build and install vllm
 RUN --mount=type=cache,target=/root/.cache/uv \
+    SETUPTOOLS_SCM_PRETEND_VERSION="$VLLM_VERSION" \
     VLLM_TARGET_DEVICE=cpu uv build --wheel --no-build-isolation && \
     uv pip install "$(echo dist/*.whl)[tensorizer]"
 
