@@ -7,7 +7,7 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-comment: "^/build-cuda"
+    pipelinesascode.tekton.dev/on-comment: "^/build-powerz"
     pipelinesascode.tekton.dev/on-label: "[build-all]"
     pipelinesascode.tekton.dev/on-event: "[pull_request]"
     pipelinesascode.tekton.dev/cancel-in-progress: "true"
@@ -16,7 +16,7 @@ metadata:
     appstudio.openshift.io/application: automation
     appstudio.openshift.io/component: pull-request-pipelines
     pipelines.appstudio.openshift.io/type: build
-  name: vllm-cuda-on-pull-request
+  name: vllm-cpu-on-pull-request
   namespace: rhoai-tenant
 spec:
   timeouts:
@@ -30,9 +30,11 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/rhoai-tenant/pull-request-pipelines:vllm-cuda-{{revision}}
-  - name: dockerfile
-    value: Dockerfile.ubi
+    value: quay.io/redhat-user-workloads/rhoai-tenant/pull-request-pipelines:vllm-cpu-{{revision}}
+  - name: s390x-dockerfile
+    value: Dockerfile.s390x.ubi
+  - name: ppc64le-dockerfile
+    value: Dockerfile.ppc64le.ubi
   - name: path-context
     value: .
   - name: hermetic
@@ -45,17 +47,14 @@ spec:
     value: true
   - name: skip-checks
     value: true
-  - name: build-args
-    value: 
-      - max_jobs=6
-      - nvcc_threads=2
   - name: fetch-git-tags
     value: true
   - name: clone-depth
-    value: "2147483647"
-  - name: build-platforms
-    value: 
-      - linux-extra-fast/amd64
+    value: '2147483647'
+  - name: s390x-build-platform
+    value: linux-large/s390x
+  - name: ppc64le-build-platform
+    value: linux-large/ppc64le
   taskRunSpecs:
   - pipelineTaskName: ecosystem-cert-preflight-checks
     computeResources:
@@ -81,7 +80,7 @@ spec:
     - name: revision
       value: '{{ target_branch }}'
     - name: pathInRepo
-      value: pipelines/multi-arch-container-build.yaml
+      value: pipelines/vllm-cpu-container-build.yaml
   taskRunTemplate:
     serviceAccountName: build-pipeline-pull-request-pipelines
   workspaces:
