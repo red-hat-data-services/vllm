@@ -47,8 +47,9 @@ RUN curl -Lo /etc/yum.repos.d/cuda-rhel9.repo \
 ENV CUDA_HOME="/usr/local/cuda" \
     PATH="${CUDA_HOME}/bin:${PATH}"
 ENV LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${CUDA_HOME}/lib64/stubs/:${CUDA_HOME}/extras/CUPTI/lib64:${LD_LIBRARY_PATH}"
-RUN microdnf install -y --nodocs \
-        cuda-nvcc-12-4 cuda-nvtx-12-4 cuda-libraries-devel-12-4 && \
+
+RUN microdnf install -y \
+        cuda-nvcc-12-8 cuda-nvtx-12-8 cuda-libraries-devel-12-8 && \
     microdnf clean all && \
     ln -s ${CUDA_HOME}/lib64/stubs/libcuda.so /usr/lib64/
 

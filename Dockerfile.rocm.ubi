@@ -1,9 +1,11 @@
 ## Global Args ##################################################################
 ARG BASE_UBI_IMAGE_TAG=9.5-1742914212
 ARG PYTHON_VERSION=3.12
+
 # Default ROCm ARCHes to build vLLM for.
 ARG PYTORCH_ROCM_ARCH="gfx908;gfx90a;gfx942;gfx1100"
 ARG MAX_JOBS=12
+ARG VLLM_TGIS_ADAPTER_VERSION=0.7.0
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:${BASE_UBI_IMAGE_TAG} AS base
 
@@ -44,13 +46,12 @@ gpgcheck=1\n\
 gpgkey=https://repo.radeon.com/rocm/rocm.gpg.key" > /etc/yum.repos.d/amdgpu.repo
 
 
-RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,target=/root/.cache/uv \
     export version="$(awk -F. '{print $1"."$2}' <<< $ROCM_VERSION)" && \
     uv pip install --pre \
-        --index-url "https://download.pytorch.org/whl/nightly/rocm${version}" \
-        torch==2.7.0.dev20250308+rocm${version}\
-        torchvision==0.22.0.dev20250308+rocm${version} && \
+        --index-url "https://download.pytorch.org/whl/rocm${version}" \
+        torch==2.7.0+rocm${version}\
+        torchvision==0.22.0+rocm${version} && \
     # Install libdrm-amdgpu to avoid errors when retrieving device information (amdgpu.ids: No such file or directory)
     microdnf install -y --nodocs libdrm-amdgpu && \
     microdnf clean all
@@ -185,6 +186,8 @@ RUN CFLAGS="-O3 -Wall -Werror=format-security -Wno-unused-function -Wp,-D_GLIBCX
 
 FROM rocm_base AS vllm-openai
 ARG MAX_JOBS
+ARG FLASH_ATTENTION_WHEEL_STRATEGY
+ARG VLLM_WHEEL_STRATEGY
 
 WORKDIR /workspace
 
