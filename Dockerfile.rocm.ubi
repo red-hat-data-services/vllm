@@ -1,7 +1,7 @@
 ## Global Args ##################################################################
 ARG BASE_UBI_IMAGE_TAG=9.5-1742914212
 ARG PYTHON_VERSION=3.12
-
+ARG VLLM_VERSION=0.8.5
 # Default ROCm ARCHes to build vLLM for.
 ARG PYTORCH_ROCM_ARCH="gfx908;gfx90a;gfx942;gfx1100"
 ARG MAX_JOBS=12
@@ -159,6 +159,7 @@ RUN --mount=type=cache,target=/root/.cache/ccache \
     env CFLAGS="-march=haswell" \
         CXXFLAGS="$CFLAGS $CXXFLAGS" \
         CMAKE_BUILD_TYPE=Release \
+        SETUPTOOLS_SCM_PRETEND_VERSION="$VLLM_VERSION" \
     python3 setup.py bdist_wheel --dist-dir=dist
 
 #################### libsodium Build IMAGE ####################
