@@ -1,7 +1,7 @@
 ## Global Args ##################################################################
 ARG BASE_UBI_IMAGE_TAG=9.5-1742914212
 ARG PYTHON_VERSION=3.12
-ARG VLLM_VERSION=0.8.5
+ARG VLLM_VERSION
 # Default ROCm ARCHes to build vLLM for.
 ARG PYTORCH_ROCM_ARCH="gfx908;gfx90a;gfx942;gfx1100"
 ARG MAX_JOBS=12

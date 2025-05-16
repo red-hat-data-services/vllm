@@ -1,5 +1,5 @@
 ARG BASE_UBI_IMAGE_TAG=9.5-1742914212
-ARG VLLM_VERSION=0.8.5
+ARG VLLM_VERSION
 ARG VLLM_TGIS_ADAPTER_VERSION=0.7.0
 
 ###############################################################
