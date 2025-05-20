@@ -48,8 +48,7 @@ spec:
     value: true
   - name: build-args
     value: 
-    - max_jobs=48
-    - VLLM_VERSION=0.8.5
+      - max_jobs=48
   - name: fetch-git-tags
     value: true
   - name: clone-depth
