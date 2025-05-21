@@ -35,6 +35,9 @@ spec:
     value: Dockerfile.s390x.ubi
   - name: ppc64le-dockerfile
     value: Dockerfile.ppc64le.ubi
+  - name: build-args
+    value: 
+    - VLLM_VERSION=0.8.5
   - name: path-context
     value: .
   - name: hermetic

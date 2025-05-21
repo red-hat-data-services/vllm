@@ -47,8 +47,9 @@ spec:
     value: true
   - name: build-args
     value: 
-      - max_jobs=6
-      - nvcc_threads=2
+    - max_jobs=6
+    - nvcc_threads=2
+    - VLLM_VERSION=0.8.5
   - name: fetch-git-tags
     value: true
   - name: clone-depth
