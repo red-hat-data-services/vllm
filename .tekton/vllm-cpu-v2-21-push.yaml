@@ -54,9 +54,9 @@ spec:
   - name: clone-depth
     value: "2147483647"
   - name: s390x-build-platform
-    value: linux-large/s390x
+    value: linux/s390x
   - name: ppc64le-build-platform
-    value: linux-large/ppc64le 
+    value: linux/ppc64le 
   taskRunSpecs:
     - pipelineTaskName: ecosystem-cert-preflight-checks
       computeResources:
