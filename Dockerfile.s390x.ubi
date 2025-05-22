@@ -2,7 +2,7 @@
 ARG BASE_UBI_IMAGE_TAG=9.5-1741850109
 ARG VLLM_VERSION
 ARG PYTHON_VERSION=3.12
-ARG VLLM_TGIS_ADAPTER_VERSION="0.7.0"
+ARG VLLM_TGIS_ADAPTER_VERSION="0.7.1"
 FROM registry.access.redhat.com/ubi9/ubi-minimal:${BASE_UBI_IMAGE_TAG} AS base
 
 # Install basic dependencies
@@ -16,9 +16,9 @@ ENV LANG=C.UTF-8 \
 
 # Install development utilities
 RUN microdnf install -y --nodocs \
-    which procps findutils tar vim git gcc g++ make patch zlib-devel \
+    which procps findutils tar vim git gcc gcc-gfortran g++ make patch zlib-devel \
     libjpeg-turbo-devel libtiff-devel libpng-devel libwebp-devel freetype-devel harfbuzz-devel \
-    openssl-devel openblas openblas-devel autoconf automake libtool cmake gcc-gfortran && \
+    openssl-devel openblas openblas-devel autoconf automake libtool cmake && \
     microdnf clean all
 
 # Python Installation
@@ -86,18 +86,41 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
     rustup default stable && \
     rustup show
 
+FROM python-install AS torch
+ARG TORCH_VERSION=2.7.0
+ENV export _GLIBCXX_USE_CXX11_ABI=1
+ENV CARGO_HOME=/root/.cargo
+ENV RUSTUP_HOME=/root/.rustup
+ENV PATH="$CARGO_HOME/bin:$RUSTUP_HOME/bin:$PATH"
+
+WORKDIR /tmp
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,from=rust,source=/root/.cargo,target=/root/.cargo,rw \
+    --mount=type=bind,from=rust,source=/root/.rustup,target=/root/.rustup,rw \
+    git clone https://github.com/pytorch/pytorch.git && \
+    cd pytorch && \
+    git checkout v2.7.0 && \
+    git submodule sync && \
+    git submodule update --init --recursive && \
+    uv pip install cmake ninja && \
+    uv pip install -r requirements.txt && \
+    python setup.py bdist_wheel
+    
+
 FROM python-install AS torch-vision
 # Install torchvision
 ARG TORCH_VERSION=2.7.0.dev20250304
 ARG TORCH_VISION_VERSION=v0.20.1
 WORKDIR /tmp
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,from=torch,source=/tmp/pytorch/dist,target=/tmp/torch-wheels/ \
     git clone https://github.com/pytorch/vision.git && \
     cd vision && \
     git checkout $TORCH_VISION_VERSION && \
-    uv pip install -v torch==${TORCH_VERSION} --extra-index-url https://download.pytorch.org/whl/nightly/cpu && \
-    python setup.py bdist_wheel && \
-    uv pip install dist/*.whl
+    TORCH_WHL_FILE=$(ls /tmp/torch-wheels/*.whl | head -n 1) && \
+    uv pip install -v $TORCH_WHL_FILE && \
+    python setup.py bdist_wheel
 
 FROM python-install AS hf-xet-builder
 # Install hf-xet
@@ -123,6 +146,9 @@ ARG PYTHON_VERSION
 ENV LD_LIBRARY_PATH="/opt/vllm/lib64/python${PYTHON_VERSION}/site-packages/torch/lib:/usr/local/lib:$LD_LIBRARY_PATH"
 ENV C_INCLUDE_PATH="/usr/local/include:$C_INCLUDE_PATH"
 ENV UV_LINK_MODE=copy
+ENV CARGO_HOME=/root/.cargo
+ENV RUSTUP_HOME=/root/.rustup
+ENV PATH="$CARGO_HOME/bin:$RUSTUP_HOME/bin:$PATH"
 
 COPY . /workspace/vllm
 WORKDIR /workspace/vllm
@@ -135,36 +161,28 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,from=rust,source=/root/.cargo,target=/root/.cargo,rw \
     --mount=type=bind,from=rust,source=/root/.rustup,target=/root/.rustup,rw \
     --mount=type=bind,from=pyarrow,source=/tmp/arrow/python/dist,target=/tmp/arrow-wheels \
+    --mount=type=bind,from=torch-vision,source=/tmp/vision/dist,target=/tmp/vision-wheels/ \
     --mount=type=bind,from=hf-xet-builder,source=/tmp/hf-xet/dist,target=/tmp/hf-xet-wheels/ \
-    export PATH="/root/.cargo/bin:/root/.rustup/bin:$PATH" \
-           ARROW_WHL_FILE=$(ls /tmp/arrow-wheels/pyarrow-*.whl | head -n 1) && \
-           HF_XET_WHL_FILE=$(ls /tmp/hf-xet-wheels/*.whl | head -n 1) && \
+    --mount=type=bind,from=torch,source=/tmp/pytorch/dist,target=/tmp/torch-wheels/ \
      sed -i '/^torch/d' requirements/build.txt && \
-     sed -i '/^numba/d' requirements/common.txt && \
-    uv pip install -v \
-        $ARROW_WHL_FILE \
+     ARROW_WHL_FILE=$(ls /tmp/arrow-wheels/pyarrow-*.whl | head -n 1) && \
+     VISION_WHL_FILE=$(ls /tmp/vision-wheels/*.whl | head -n 1) && \
+     HF_XET_WHL_FILE=$(ls /tmp/hf-xet-wheels/*.whl | head -n 1) && \
+     TORCH_WHL_FILE=$(ls /tmp/torch-wheels/*.whl | head -n 1) && \
+    uv pip install -v \    
+        $ARROW_WHL_FILE  \
+        $VISION_WHL_FILE \
         $HF_XET_WHL_FILE \
-        --extra-index-url https://download.pytorch.org/whl/nightly/cpu \
+        $TORCH_WHL_FILE \
         --index-strategy unsafe-best-match \
         -r requirements/build.txt \
-        -r requirements/cpu.txt
+        -r requirements/cpu.txt 
 
 # Build and install vllm
 RUN --mount=type=cache,target=/root/.cache/uv \
     SETUPTOOLS_SCM_PRETEND_VERSION="$VLLM_VERSION" \
-    VLLM_TARGET_DEVICE=cpu uv build --wheel --no-build-isolation && \
+    VLLM_TARGET_DEVICE=cpu python setup.py bdist_wheel && \
     uv pip install "$(echo dist/*.whl)[tensorizer]"
-
-ENV HF_HUB_OFFLINE=1 \
-    HOME=/home/vllm \
-    # Allow requested max length to exceed what is extracted from the
-    # config.json
-    # see: https://github.com/vllm-project/vllm/pull/7080
-    VLLM_ALLOW_LONG_MAX_MODEL_LEN=1 \
-    VLLM_USAGE_SOURCE=production-docker-image \
-    VLLM_WORKER_MULTIPROC_METHOD=fork \
-    VLLM_NO_USAGE_STATS=1 \
-    OUTLINES_CACHE_DIR=/tmp/outlines
 
 # setup non-root user for vllm
 RUN umask 002 && \

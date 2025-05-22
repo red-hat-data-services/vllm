@@ -2,6 +2,7 @@
 ARG BASE_UBI_IMAGE_TAG=9.5-1742914212
 ARG PYTHON_VERSION=3.12
 ARG VLLM_VERSION
+ARG VLLM_TGIS_ADAPTER_VERSION="0.7.1"
 ARG LIBSODIUM_VERSION=1.0.20
 ARG TORCH_CUDA_ARCH_LIST="7.0 7.5 8.0 8.6 8.9 9.0+PTX"
 ARG vllm_fa_cmake_gpu_arches='80-real;90-real'
@@ -210,9 +211,10 @@ FROM vllm-openai as vllm-grpc-adapter
 
 USER root
 
+ARG VLLM_TGIS_ADAPTER_VERSION
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,from=build,src=/workspace/dist,target=/workspace/dist \
-    HOME=/root uv pip install "$(echo /workspace/dist/*.whl)[audio,video,tensorizer]" vllm-tgis-adapter==0.7.0
+    HOME=/root uv pip install "$(echo /workspace/dist/*.whl)[audio,video,tensorizer]" vllm-tgis-adapter==${VLLM_TGIS_ADAPTER_VERSION}
 
 ENV GRPC_PORT=8033 \
     PORT=8000 \
