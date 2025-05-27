@@ -69,17 +69,38 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install \
         -r requirements/cuda.txt
 
+## Mumba build #################################################################
+FROM python-cuda-base AS mamba-build
+
+ARG max_jobs=2
+ENV MAX_JOBS=${max_jobs}
+ENV MAMBA_FORCE_BUILD="TRUE"
+ENV MAMBA_FORCE_CXX11_ABI="FALSE"
+ENV HIP_ARCHITECTURES="gfx942"
+
+# install build and runtime dependencies
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=requirements/common.txt,target=requirements/common.txt \
+    --mount=type=bind,source=requirements/cuda.txt,target=requirements/cuda.txt \
+    uv pip install --constraints requirements/cuda.txt torch packaging psutil setuptools wheel && \
+    git clone https://github.com/state-spaces/mamba.git && \
+    cd mamba && \
+    git checkout v2.2.4 && \
+    uv build --wheel --no-build-isolation --out-dir=/tmp/dist
 
 ## Development #################################################################
 FROM python-cuda-base AS dev
 
 # install build and runtime dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,from=mamba-build,source=/tmp/dist/,target=/tmp/mamba-wheels/ \
     --mount=type=bind,source=requirements/common.txt,target=requirements/common.txt \
     --mount=type=bind,source=requirements/cuda.txt,target=requirements/cuda.txt \
     --mount=type=bind,source=requirements/dev.txt,target=requirements/dev.txt \
     --mount=type=bind,source=requirements/lint.txt,target=requirements/lint.txt \
     --mount=type=bind,source=requirements/test.txt,target=requirements/test.txt \
+    MAMBA_WHL_FILE=$(ls /tmp/mamba-wheels/*.whl | head -n 1) && \
+    uv pip install -v $MAMBA_WHL_FILE  && \
     uv pip install \
         -r requirements/cuda.txt \
         -r requirements/dev.txt
