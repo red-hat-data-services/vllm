@@ -80,25 +80,29 @@ ENV MAMBA_FORCE_BUILD="TRUE"
 ENV MAMBA_FORCE_CXX11_ABI="FALSE"
 ENV HIP_ARCHITECTURES="gfx942"
 
-# Pre-install mamba-ssm into the cache so uv reuses it later
+# install build and runtime dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install torch packaging psutil setuptools wheel && \
-    uv pip install --no-build-isolation "git+https://github.com/state-spaces/mamba@v2.2.4" && \
-    mkdir -p /tmp/output && cp -r /root/.cache/uv /tmp/output/uv-cache
+    --mount=type=bind,source=requirements/common.txt,target=requirements/common.txt \
+    --mount=type=bind,source=requirements/cuda.txt,target=requirements/cuda.txt \
+    uv pip install --constraints requirements/cuda.txt torch packaging psutil setuptools wheel && \
+    git clone https://github.com/state-spaces/mamba.git && \
+    cd mamba && \
+    git checkout v2.2.4 && \
+    uv build --wheel --no-build-isolation --out-dir=/tmp/dist
 
 ## Development #################################################################
 FROM python-cuda-base AS dev
 
-# Copy the prebuilt UV cache to avoid rebuilding mamba-ssm
-COPY --from=mamba-build /tmp/output/uv-cache /root/.cache/u
-
 # install build and runtime dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,from=mamba-build,source=/tmp/dist/,target=/tmp/mamba-wheels/ \
     --mount=type=bind,source=requirements/common.txt,target=requirements/common.txt \
     --mount=type=bind,source=requirements/cuda.txt,target=requirements/cuda.txt \
     --mount=type=bind,source=requirements/dev.txt,target=requirements/dev.txt \
     --mount=type=bind,source=requirements/lint.txt,target=requirements/lint.txt \
     --mount=type=bind,source=requirements/test.txt,target=requirements/test.txt \
+    MAMBA_WHL_FILE=$(ls /tmp/mamba-wheels/*.whl | head -n 1) && \
+    uv pip install -v $MAMBA_WHL_FILE  && \
     uv pip install \
         -r requirements/cuda.txt \
         -r requirements/dev.txt
