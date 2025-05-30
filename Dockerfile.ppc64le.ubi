@@ -15,7 +15,7 @@ RUN microdnf install -y dnf && dnf install -y gcc-toolset-13 make wget unzip \
     && wget https://github.com/OpenMathLib/OpenBLAS/releases/download/v$OPENBLAS_VERSION/OpenBLAS-$OPENBLAS_VERSION.zip \
     && unzip OpenBLAS-$OPENBLAS_VERSION.zip \
     && cd OpenBLAS-$OPENBLAS_VERSION \
-    &&  make -j${MAX_JOBS} TARGET=POWER10 BINARY=64 USE_OPENMP=1 USE_THREAD=1 NUM_THREADS=120 DYNAMIC_ARCH=1 INTERFACE64=0 \
+    &&  make -j${MAX_JOBS} TARGET=POWER10 BINARY=64 USE_OPENMP=1 USE_THREAD=1 NUM_THREADS=120 DYNAMIC_ARCH=1 INTERFACE64=0 NO_FBLAS=1 NO_CBLAS=1 ONLY_CBLAS=1 \
     && cd /tmp && touch control
 
 ###############################################################
@@ -289,11 +289,13 @@ COPY --from=vllmcache-builder /tmp/control /dev/null
 COPY --from=numa-builder /tmp/control /dev/null
 COPY --from=lapack-builder /tmp/control /dev/null
 COPY --from=openblas-builder /tmp/control /dev/null
+COPY --from=openblas-builder /tmp/control /dev/null
 
 # install gcc-11, python, openblas, numactl, lapack
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,from=numa-builder,source=/numactl/,target=/numactl/,rw \
     --mount=type=bind,from=lapack-builder,source=/lapack/,target=/lapack/,rw \
+    --mount=type=bind,from=openblas-builder,source=/OpenBLAS-$OPENBLAS_VERSION/,target=/openblas/,rw \
     rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
     microdnf install --nodocs -y \
     tar findutils openssl \
@@ -305,8 +307,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     && microdnf clean all \
     && python${PYTHON_VERSION} -m venv ${VIRTUAL_ENV} \
     && python -m pip install -U pip uv --no-cache \
-    && curl -L --no-progress-meter --retry 5 --retry-connrefused https://ftp2.osuosl.org/pub/ppc64el/openblas/latest/Openblas_${OPENBLAS_VERSION}_ppc64le.tar.gz | tar xvf - -C /usr/local \
     && make -C /numactl install \
+    && PREFIX=/usr/local make -C /openblas install \
     && uv pip install 'cmake<4' \
     && cmake --install /lapack/build \
     && uv pip uninstall cmake
