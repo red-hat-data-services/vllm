@@ -50,7 +50,7 @@ spec:
     value: 
     - max_jobs=6
     - nvcc_threads=2
-    - VLLM_VERSION=0.8.5
+    - VLLM_VERSION=0.9.0
   - name: fetch-git-tags
     value: true
   - name: clone-depth
@@ -91,4 +91,3 @@ spec:
     secret:
       secretName: '{{ git_auth_secret }}'
 status: {}
-#restart
