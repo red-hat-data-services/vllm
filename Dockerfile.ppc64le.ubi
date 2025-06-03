@@ -280,6 +280,7 @@ ENV VIRTUAL_ENV=/opt/vllm
 ENV PATH=${VIRTUAL_ENV}/bin:$PATH
 ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig/
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib64:/usr/local/lib:/usr/lib64:/usr/lib
+ENV OMP_NUM_THREADS=16
 
 # create artificial dependencies between stages for independent stages to build in parallel
 COPY --from=torch-builder /tmp/control /dev/null
