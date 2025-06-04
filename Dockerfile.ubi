@@ -77,12 +77,8 @@ FROM python-cuda-base AS dev
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=requirements/common.txt,target=requirements/common.txt \
     --mount=type=bind,source=requirements/cuda.txt,target=requirements/cuda.txt \
-    --mount=type=bind,source=requirements/dev.txt,target=requirements/dev.txt \
-    --mount=type=bind,source=requirements/lint.txt,target=requirements/lint.txt \
-    --mount=type=bind,source=requirements/test.txt,target=requirements/test.txt \
     uv pip install \
-        -r requirements/cuda.txt \
-        -r requirements/dev.txt
+        -r requirements/cuda.txt
 
 ## Builder #####################################################################
 FROM dev AS build
@@ -104,7 +100,7 @@ ARG vllm_fa_cmake_gpu_arches
 ENV VLLM_FA_CMAKE_GPU_ARCHES=${vllm_fa_cmake_gpu_arches}
 
 # max jobs used by Ninja to build extensions
-ARG max_jobs=2
+ARG max_jobs=40
 ENV MAX_JOBS=${max_jobs}
 # number of threads used by nvcc
 ARG nvcc_threads=8
