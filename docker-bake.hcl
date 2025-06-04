@@ -18,7 +18,7 @@ variable "ROCM_VERSION" {
 }
 
 variable "VLLM_TGIS_ADAPTER_VERSION" {
-  default = "0.7.0"
+  default = "0.7.1"
 }
 
 

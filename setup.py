@@ -5,12 +5,12 @@ import importlib.util
 import json
 import logging
 import os
-import re
 import subprocess
 import sys
 from pathlib import Path
 from shutil import which
 
+import regex as re
 import torch
 from packaging.version import Version, parse
 from setuptools import Extension, setup
@@ -54,7 +54,7 @@ elif (sys.platform.startswith("linux") and torch.version.cuda is None
     # fallback to cpu
     VLLM_TARGET_DEVICE = "cpu"
 
-MAIN_CUDA_VERSION = "12.4"
+MAIN_CUDA_VERSION = "12.8"
 
 
 def is_sccache_available() -> bool:
@@ -389,7 +389,6 @@ class repackage_wheel(build_ext):
             # vllm_flash_attn python code:
             # Regex from
             #  `glob.translate('vllm/vllm_flash_attn/**/*.py', recursive=True)`
-            import re
             compiled_regex = re.compile(
                 r"vllm/vllm_flash_attn/(?:[^/.][^/]*/)*(?!\.)[^/]*\.py")
             file_members += list(
@@ -483,10 +482,10 @@ def get_rocm_version():
         get_rocm_core_version = librocm_core.getROCmVersion
         get_rocm_core_version.restype = VerErrors
         get_rocm_core_version.argtypes = [
-                ctypes.POINTER(ctypes.c_uint32),
-                ctypes.POINTER(ctypes.c_uint32),
-                ctypes.POINTER(ctypes.c_uint32),
-                ]
+            ctypes.POINTER(ctypes.c_uint32),
+            ctypes.POINTER(ctypes.c_uint32),
+            ctypes.POINTER(ctypes.c_uint32),
+        ]
         major = ctypes.c_uint32()
         minor = ctypes.c_uint32()
         patch = ctypes.c_uint32()

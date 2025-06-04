@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import enum
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from vllm.multimodal.inputs import MultiModalKwargs, PlaceholderRange
 from vllm.sampling_params import SamplingParams
@@ -29,6 +29,7 @@ class Request:
         arrival_time: float,
         lora_request: Optional["LoRARequest"] = None,
         structured_output_request: Optional["StructuredOutputRequest"] = None,
+        cache_salt: Optional[str] = None,
     ) -> None:
         self.request_id = request_id
         self.sampling_params = sampling_params
@@ -51,6 +52,7 @@ class Request:
         self._all_token_ids: list[int] = self.prompt_token_ids.copy()
         self.spec_token_ids: list[int] = []
         self.num_computed_tokens = 0
+        self.cache_salt: Optional[str] = cache_salt
 
         # Multi-modal related
         self.mm_positions = multi_modal_placeholders or []
@@ -59,16 +61,25 @@ class Request:
         self.num_encoder_inputs = len(self.mm_inputs)
         self.has_encoder_inputs = self.num_encoder_inputs > 0
 
+        # P/D: Connector-specific KV transfer parameters.
+        kv_params = (None if sampling_params.extra_args is None else
+                     sampling_params.extra_args.get("kv_transfer_params"))
+        self.kv_transfer_params: Optional[dict[str, Any]] = kv_params
+
         # Sanity check
         assert len(self.mm_inputs) == len(self.mm_positions)
         if self.mm_hashes:
             assert len(self.mm_inputs) == len(self.mm_hashes)
 
         # Read-only views
-        # Prevent directly appending to the these lists since
+        # Prevent directly appending to these lists since
         # they should also be updated simultaneously.
         self.output_token_ids = ConstantList(self._output_token_ids)
         self.all_token_ids = ConstantList(self._all_token_ids)
+
+        # State
+        # The number of tokens with prefix cache hits.
+        self.num_cached_tokens = -1
 
     @classmethod
     def from_engine_core_request(cls, request: EngineCoreRequest) -> "Request":
@@ -89,6 +100,7 @@ class Request:
             lora_request=request.lora_request,
             structured_output_request=StructuredOutputRequest(
                 sampling_params=request.sampling_params),
+            cache_salt=request.cache_salt,
         )
 
     def append_output_token_ids(
@@ -147,6 +159,7 @@ class RequestStatus(enum.IntEnum):
     """Status of a request."""
     WAITING = enum.auto()
     WAITING_FOR_FSM = enum.auto()
+    WAITING_FOR_REMOTE_KVS = enum.auto()
     RUNNING = enum.auto()
     PREEMPTED = enum.auto()
     # Note: anything after PREEMPTED will be considered

@@ -275,7 +275,10 @@ def need_extra_keys(request: Request) -> bool:
 
     # Multimodal requests need to include the MM hash.
     # LoRA requests need to include the LoRA ID.
-    return bool(request.mm_positions) or (request.lora_request is not None)
+    # Request with provided cache salt need to include the salt.
+    return bool(request.mm_positions) or (request.lora_request
+                                          is not None) or (request.cache_salt
+                                                           is not None)
 
 
 def _gen_mm_extra_hash_keys(request: Request, start_token_idx: int,
@@ -380,8 +383,10 @@ def generate_block_hash_extra_keys(
     mm_extra_keys, new_start_mm_idx = _gen_mm_extra_hash_keys(
         request, start_token_idx, end_token_idx, start_mm_idx)
     lora_extra_keys: list[int] = _gen_lora_extra_hash_keys(request)
+    cache_salt_keys: list[str] = [request.cache_salt] if (
+        start_token_idx == 0 and request.cache_salt) else []
 
-    extra_keys: list[Any] = lora_extra_keys + mm_extra_keys
+    extra_keys: list[Any] = lora_extra_keys + mm_extra_keys + cache_salt_keys
 
     if not extra_keys:
         return None, new_start_mm_idx
@@ -572,14 +577,12 @@ def create_kv_cache_group_specs(
      """
     kv_cache_groups = []
     for layer_names_one_group in grouped_layer_names:
-        layer_spec = kv_cache_spec[layer_names_one_group[0]]
-        assert all(
-            kv_cache_spec[layer_name] == layer_spec
-            for layer_name in layer_names_one_group[1:]), (
-                "All layers in the same KV cache group must share the same "
-                "KVCacheSpec.")
+        layer_specs = [
+            kv_cache_spec[layer_name] for layer_name in layer_names_one_group
+        ]
+        merged_layer_spec = layer_specs[0].merge(layer_specs)
         kv_cache_groups.append(
-            KVCacheGroupSpec(layer_names_one_group, layer_spec))
+            KVCacheGroupSpec(layer_names_one_group, merged_layer_spec))
     return kv_cache_groups
 
 
@@ -657,10 +660,10 @@ def _get_kv_cache_config_uniform_type(vllm_config: VllmConfig,
 def unify_hybrid_kv_cache_specs(kv_cache_spec: dict[str, KVCacheSpec]):
     """
     Only models with one type of KV cache are supported yet. This function tries
-    to convert the KV cache specs to one type if the model is a hybrid model 
+    to convert the KV cache specs to one type if the model is a hybrid model
     with multiple type of KV cache. It will convert all SlidingWindowSpec to
     FullAttentionSpec if both types are present.
-    
+
     Args:
         kv_cache_spec: The kv cache spec of each attention layer in the model
     """
@@ -678,6 +681,7 @@ def unify_hybrid_kv_cache_specs(kv_cache_spec: dict[str, KVCacheSpec]):
                     head_size=spec.head_size,
                     dtype=spec.dtype,
                     use_mla=spec.use_mla,
+                    sliding_window=spec.sliding_window,
                 )
 
 

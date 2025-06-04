@@ -57,6 +57,7 @@ class EngineCoreRequest(
     eos_token_id: Optional[int]
     arrival_time: float
     lora_request: Optional[LoRARequest]
+    cache_salt: Optional[str]
 
     # Used in DP case to indicate which wave of requests this is expected to
     # belong to, to cover a race condition where the request is sent before
@@ -104,6 +105,10 @@ class EngineCoreOutput(
     finish_reason: Optional[FinishReason] = None
     stop_reason: Union[int, str, None] = None
     events: Optional[list[EngineCoreEvent]] = None
+    kv_transfer_params: Optional[dict[str, Any]] = None
+
+    # The number of tokens with prefix cache hits.
+    num_cached_tokens: int = 0
 
     @property
     def finished(self) -> bool:
