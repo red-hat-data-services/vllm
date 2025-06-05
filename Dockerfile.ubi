@@ -69,19 +69,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install \
         -r requirements/cuda.txt
 
-
-## Development #################################################################
-FROM python-cuda-base AS dev
-
-# install build and runtime dependencies
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=requirements/common.txt,target=requirements/common.txt \
-    --mount=type=bind,source=requirements/cuda.txt,target=requirements/cuda.txt \
-    uv pip install \
-        -r requirements/cuda.txt
-
 ## Builder #####################################################################
-FROM dev AS build
+FROM python-cuda-base AS build
 
 # install build dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -162,7 +151,7 @@ RUN microdnf install -y --nodocs gcc \
 RUN --mount=type=bind,from=build,src=/workspace/dist,target=/workspace/dist \
     --mount=type=cache,target=/root/.cache/uv \
     uv pip install "$(echo dist/*.whl)[audio,video,tensorizer]" --verbose \
-    "https://github.com/flashinfer-ai/flashinfer/releases/download/v0.2.1.post2/flashinfer_python-0.2.1.post2+cu124torch2.6-cp38-abi3-linux_x86_64.whl"
+    "https://github.com/flashinfer-ai/flashinfer/releases/download/v0.2.5/flashinfer_python-0.2.5+cu128torch2.7-cp38-abi3-linux_aarch64.whl"
 
 # Install libsodium for Tensorizer encryption
 RUN --mount=type=bind,from=libsodium-builder,src=/usr/src/libsodium,target=/usr/src/libsodium \
