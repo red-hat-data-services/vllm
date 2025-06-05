@@ -164,13 +164,13 @@ RUN microdnf install -y --nodocs gcc \
     rsync \
     && microdnf clean all
 
-RUN --mount=type=bind,from=flashinfer-builder,src=/tmp/dist,target=/tmp/dist/flashinfer \
-    uv pip install "$(echo /tmp/dist/flashinfer/*.whl)"
-
 # install vllm wheel first, so that torch etc will be installed
 RUN --mount=type=bind,from=build,src=/workspace/dist,target=/workspace/dist \
     --mount=type=cache,target=/root/.cache/uv \
     uv pip install "$(echo dist/*.whl)[audio,video,tensorizer]" --verbose
+
+RUN --mount=type=bind,from=flashinfer-builder,src=/tmp/dist,target=/tmp/dist/flashinfer \
+    uv pip install "$(echo /tmp/dist/flashinfer/*.whl)"
 
 # Install libsodium for Tensorizer encryption
 RUN --mount=type=bind,from=libsodium-builder,src=/usr/src/libsodium,target=/usr/src/libsodium \
