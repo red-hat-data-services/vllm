@@ -38,7 +38,7 @@ class InputContext:
     ) -> _C:
         """
         Get the HuggingFace configuration
-        (:class:`transformers.PretrainedConfig`) of the model,
+        (`transformers.PretrainedConfig`) of the model,
         additionally checking its type.
 
         Raises:
@@ -79,7 +79,7 @@ class InputContext:
     ) -> _P:
         """
         Get the HuggingFace processor
-        (:class:`transformers.ProcessorMixin`) of the model,
+        (`transformers.ProcessorMixin`) of the model,
         additionally checking its type.
 
         Raises:
@@ -101,7 +101,8 @@ class InputContext:
         Initialize a HuggingFace-like processor class, merging the
         keyword arguments with those in the model's configuration.
         """
-        base_kwargs = self.model_config.mm_processor_kwargs
+        mm_config = self.model_config.get_multimodal_config()
+        base_kwargs = mm_config.mm_processor_kwargs
         if base_kwargs is None:
             base_kwargs = {}
 
@@ -134,12 +135,13 @@ class InputProcessingContext(InputContext):
         kwargs: Mapping[str, object] = {},
     ) -> BatchFeature:
         """
-        Call :code:`hf_processor` on the prompt :code:`data`
-        (text, image, audio...) with configurable options :code:`kwargs`.
+        Call `hf_processor` on the prompt `data`
+        (text, image, audio...) with configurable options `kwargs`.
         """
         assert callable(hf_processor)
 
-        base_kwargs = self.model_config.mm_processor_kwargs
+        mm_config = self.model_config.get_multimodal_config()
+        base_kwargs = mm_config.mm_processor_kwargs
         if base_kwargs is None:
             base_kwargs = {}
 
@@ -157,7 +159,7 @@ class InputProcessingContext(InputContext):
             msg = (f"Failed to apply {type(hf_processor).__name__} "
                    f"on data={data} with kwargs={merged_kwargs}")
 
-            raise RuntimeError(msg) from exc
+            raise ValueError(msg) from exc
 
 
 class DummyData(NamedTuple):
