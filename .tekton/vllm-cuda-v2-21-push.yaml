@@ -48,8 +48,8 @@ spec:
     value: true
   - name: build-args
     value: 
-    - max_jobs=48
-    - nvcc_threads=2
+    - max_jobs=24
+    - nvcc_threads=6
     - VLLM_VERSION=0.9.0.1
   - name: fetch-git-tags
     value: true
