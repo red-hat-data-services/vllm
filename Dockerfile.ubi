@@ -6,6 +6,8 @@ ARG VLLM_TGIS_ADAPTER_VERSION="0.7.1"
 ARG LIBSODIUM_VERSION=1.0.20
 ARG TORCH_CUDA_ARCH_LIST="7.0 7.5 8.0 8.6 8.9 9.0 10.0 12.0+PTX"
 ARG vllm_fa_cmake_gpu_arches='80-real;90-real'
+ARG max_jobs=2
+ARG nvcc_threads=8
 
 ## Base Layer ##################################################################
 FROM registry.access.redhat.com/ubi9/ubi-minimal:${BASE_UBI_IMAGE_TAG} as base
@@ -89,13 +91,14 @@ ARG vllm_fa_cmake_gpu_arches
 ENV VLLM_FA_CMAKE_GPU_ARCHES=${vllm_fa_cmake_gpu_arches}
 
 # max jobs used by Ninja to build extensions
-ARG max_jobs=2
+ARG max_jobs
 ENV MAX_JOBS=${max_jobs}
 # number of threads used by nvcc
-ARG nvcc_threads=8
+ARG nvcc_threads
 ENV NVCC_THREADS=$nvcc_threads
 # make sure punica kernels are built (for LoRA)
 ENV VLLM_INSTALL_PUNICA_KERNELS=1
+ARG VLLM_VERSION
 
 # Make sure the cuda environment is in the PATH
 ENV PATH=/usr/local/cuda/bin:$PATH
@@ -108,12 +111,13 @@ RUN --mount=type=cache,target=/root/.cache/ccache \
     env CFLAGS="-march=haswell" \
         CXXFLAGS="$CFLAGS $CXXFLAGS" \
         CMAKE_BUILD_TYPE=Release \
-        SETUPTOOLS_SCM_PRETEND_VERSION="$VLLM_VERSION" \
+        SETUPTOOLS_SCM_PRETEND_VERSION="${VLLM_VERSION}" \
         python3 setup.py bdist_wheel --dist-dir=dist
 
 #################### libsodium Build IMAGE ####################
 FROM base as libsodium-builder
 
+ARG max_jobs
 RUN microdnf install -y --nodocs gcc gzip \
     && microdnf clean all
 
@@ -126,7 +130,7 @@ RUN curl -LO https://github.com/jedisct1/libsodium/releases/download/${LIBSODIUM
     && mv libsodium*/* ./
 
 RUN CFLAGS="-O3 -Wall -Werror=format-security -Wno-unused-function -Wp,-D_GLIBCXX_ASSERTIONS -fstack-protector-strong -fstack-clash-protection -fcf-protection"\
-    ./configure --prefix="/usr/" && make -j $MAX_JOBS && make check
+    ./configure --prefix="/usr/" && make -j ${max_jobs} && make check
 
 ## Release #####################################################################
 FROM python-install AS vllm-openai
