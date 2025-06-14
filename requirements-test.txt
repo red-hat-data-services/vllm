@@ -32,4 +32,4 @@ aiohttp
 
 # quantization
 bitsandbytes>=0.44.0
-buildkite-test-collector==0.1.8
+buildkite-test-collector==0.2.0
