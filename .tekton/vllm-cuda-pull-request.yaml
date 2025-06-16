@@ -20,8 +20,8 @@ metadata:
   namespace: rhoai-tenant
 spec:
   timeouts:
-    pipeline: 8h
-    tasks: 4h
+    pipeline: 10h
+    tasks: 8h
   params:
   - name: image-expires-after
     value: 5d
@@ -47,8 +47,9 @@ spec:
     value: true
   - name: build-args
     value: 
-      - max_jobs=6
-      - nvcc_threads=2
+    - max_jobs=6
+    - nvcc_threads=2
+    - VLLM_VERSION=0.9.0.1
   - name: fetch-git-tags
     value: true
   - name: clone-depth
