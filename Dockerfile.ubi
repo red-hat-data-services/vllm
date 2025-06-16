@@ -4,8 +4,10 @@ ARG PYTHON_VERSION=3.12
 ARG VLLM_VERSION
 ARG VLLM_TGIS_ADAPTER_VERSION="0.7.1"
 ARG LIBSODIUM_VERSION=1.0.20
-ARG TORCH_CUDA_ARCH_LIST="7.0 7.5 8.0 8.6 8.9 9.0+PTX"
+ARG TORCH_CUDA_ARCH_LIST="7.5 8.0 8.6 8.9 9.0 10.0 12.0+PTX"
 ARG vllm_fa_cmake_gpu_arches='80-real;90-real'
+ARG max_jobs=2
+ARG nvcc_threads=8
 
 ## Base Layer ##################################################################
 FROM registry.access.redhat.com/ubi9/ubi-minimal:${BASE_UBI_IMAGE_TAG} as base
@@ -69,23 +71,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install \
         -r requirements/cuda.txt
 
-
-## Development #################################################################
-FROM python-cuda-base AS dev
-
-# install build and runtime dependencies
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=requirements/common.txt,target=requirements/common.txt \
-    --mount=type=bind,source=requirements/cuda.txt,target=requirements/cuda.txt \
-    --mount=type=bind,source=requirements/dev.txt,target=requirements/dev.txt \
-    --mount=type=bind,source=requirements/lint.txt,target=requirements/lint.txt \
-    --mount=type=bind,source=requirements/test.txt,target=requirements/test.txt \
-    uv pip install \
-        -r requirements/cuda.txt \
-        -r requirements/dev.txt
-
 ## Builder #####################################################################
-FROM dev AS build
+FROM python-cuda-base AS build
 
 # install build dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -104,13 +91,14 @@ ARG vllm_fa_cmake_gpu_arches
 ENV VLLM_FA_CMAKE_GPU_ARCHES=${vllm_fa_cmake_gpu_arches}
 
 # max jobs used by Ninja to build extensions
-ARG max_jobs=2
+ARG max_jobs
 ENV MAX_JOBS=${max_jobs}
 # number of threads used by nvcc
-ARG nvcc_threads=8
+ARG nvcc_threads
 ENV NVCC_THREADS=$nvcc_threads
 # make sure punica kernels are built (for LoRA)
 ENV VLLM_INSTALL_PUNICA_KERNELS=1
+ARG VLLM_VERSION
 
 # Make sure the cuda environment is in the PATH
 ENV PATH=/usr/local/cuda/bin:$PATH
@@ -123,12 +111,13 @@ RUN --mount=type=cache,target=/root/.cache/ccache \
     env CFLAGS="-march=haswell" \
         CXXFLAGS="$CFLAGS $CXXFLAGS" \
         CMAKE_BUILD_TYPE=Release \
-        SETUPTOOLS_SCM_PRETEND_VERSION="$VLLM_VERSION" \
+        SETUPTOOLS_SCM_PRETEND_VERSION="${VLLM_VERSION}" \
         python3 setup.py bdist_wheel --dist-dir=dist
 
 #################### libsodium Build IMAGE ####################
 FROM base as libsodium-builder
 
+ARG max_jobs
 RUN microdnf install -y --nodocs gcc gzip \
     && microdnf clean all
 
@@ -141,7 +130,7 @@ RUN curl -LO https://github.com/jedisct1/libsodium/releases/download/${LIBSODIUM
     && mv libsodium*/* ./
 
 RUN CFLAGS="-O3 -Wall -Werror=format-security -Wno-unused-function -Wp,-D_GLIBCXX_ASSERTIONS -fstack-protector-strong -fstack-clash-protection -fcf-protection"\
-    ./configure --prefix="/usr/" && make -j $MAX_JOBS && make check
+    ./configure --prefix="/usr/" && make -j ${max_jobs} && make check
 
 ## Release #####################################################################
 FROM python-install AS vllm-openai
@@ -165,8 +154,10 @@ RUN microdnf install -y --nodocs gcc \
 # install vllm wheel first, so that torch etc will be installed
 RUN --mount=type=bind,from=build,src=/workspace/dist,target=/workspace/dist \
     --mount=type=cache,target=/root/.cache/uv \
-    uv pip install "$(echo dist/*.whl)[audio,video,tensorizer]" --verbose \
-    "https://github.com/flashinfer-ai/flashinfer/releases/download/v0.2.1.post2/flashinfer_python-0.2.1.post2+cu124torch2.6-cp38-abi3-linux_x86_64.whl"
+    uv pip install \
+        --extra-index-url="https://download.pytorch.org/whl/cu128" --index-strategy='unsafe-best-match' \
+        "$(echo dist/*.whl)[audio,video,tensorizer]" --verbose \
+        "https://storage.googleapis.com/neuralmagic-public-pypi/dist/flashinfer_python-0.2.5-cp38-abi3-linux_x86_64.whl"
 
 # Install libsodium for Tensorizer encryption
 RUN --mount=type=bind,from=libsodium-builder,src=/usr/src/libsodium,target=/usr/src/libsodium \
@@ -214,7 +205,10 @@ USER root
 ARG VLLM_TGIS_ADAPTER_VERSION
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,from=build,src=/workspace/dist,target=/workspace/dist \
-    HOME=/root uv pip install "$(echo /workspace/dist/*.whl)[audio,video,tensorizer]" vllm-tgis-adapter==${VLLM_TGIS_ADAPTER_VERSION}
+    HOME=/root uv pip install \
+        --extra-index-url="https://download.pytorch.org/whl/cu128" --index-strategy='unsafe-best-match' \
+        "$(echo /workspace/dist/*.whl)[audio,video,tensorizer]" \
+        vllm-tgis-adapter==${VLLM_TGIS_ADAPTER_VERSION}
 
 ENV GRPC_PORT=8033 \
     PORT=8000 \
