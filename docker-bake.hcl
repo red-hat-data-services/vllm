@@ -1,5 +1,9 @@
 variable "REPOSITORY" {
-  default = "quay.io/vllm/vllm"
+  default = "quay.io/vllm/automation-vllm"
+}
+
+variable "RELEASE_IMAGE" {
+  default = false
 }
 
 # GITHUB_* variables are set as env vars in github actions
@@ -57,17 +61,15 @@ target "cuda" {
 
   args = {
     PYTHON_VERSION = "${PYTHON_VERSION}"
-    # CUDA_VERSION = "12.4" # TODO: the dockerfile cannot consume the cuda version
     LIBSODIUM_VERSION = "1.0.20"
     VLLM_TGIS_ADAPTER_VERSION = "${VLLM_TGIS_ADAPTER_VERSION}"
-
-    FLASHINFER_VERSION = "https://github.com/flashinfer-ai/flashinfer/releases/download/v0.2.1.post2/flashinfer_python-0.2.1.post2+cu124torch2.6-cp38-abi3-linux_x86_64.whl"
   }
 
   tags = [
     "${REPOSITORY}:${replace(VLLM_VERSION, "+", "_")}", # vllm_version might contain local version specifiers (+) which are not valid tags
-    "${REPOSITORY}:${GITHUB_SHA}",
-    "${REPOSITORY}:${formatdate("YYYY-MM-DD-hh-mm", timestamp())}"
+    "${REPOSITORY}:cuda-${GITHUB_SHA}",
+    "${REPOSITORY}:cuda-${GITHUB_RUN_ID}",
+    RELEASE_IMAGE ? "quay.io/vllm/vllm-cuda:${replace(VLLM_VERSION, "+", "_")}" : ""
   ]
 }
 
@@ -84,7 +86,8 @@ target "rocm" {
 
   tags = [
     "${REPOSITORY}:${replace(VLLM_VERSION, "+", "_")}", # vllm_version might contain local version specifiers (+) which are not valid tags
-    "${REPOSITORY}:${GITHUB_SHA}",
-    "${REPOSITORY}:${formatdate("YYYY-MM-DD-hh-mm", timestamp())}"
+    "${REPOSITORY}:rocm-${GITHUB_SHA}",
+    "${REPOSITORY}:rocm-${GITHUB_RUN_ID}",
+    RELEASE_IMAGE ? "quay.io/vllm/vllm-rocm:${replace(VLLM_VERSION, "+", "_")}" : ""
   ]
 }

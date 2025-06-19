@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
 import warnings
 
@@ -23,11 +24,6 @@ from .registry import HF_EXAMPLE_MODELS
 
 @pytest.mark.parametrize("model_arch", ModelRegistry.get_supported_archs())
 def test_registry_imports(model_arch):
-
-    # Llama4ForCausalLM does not have a standalone model
-    if model_arch == "Llama4ForCausalLM":
-        return
-
     model_info = HF_EXAMPLE_MODELS.get_hf_info(model_arch)
     model_info.check_transformers_version(on_fail="skip")
 
@@ -96,11 +92,8 @@ def test_registry_is_pp(model_arch, is_pp, init_cuda):
 
 
 def test_hf_registry_coverage():
-    untested_archs = set(ModelRegistry.get_supported_archs() -
-                         HF_EXAMPLE_MODELS.get_supported_archs())
-
-    # Llama4ForCausalLM does not have a standalone model
-    untested_archs.discard("Llama4ForCausalLM")
+    untested_archs = (ModelRegistry.get_supported_archs() -
+                      HF_EXAMPLE_MODELS.get_supported_archs())
 
     assert not untested_archs, (
         "Please add the following architectures to "
