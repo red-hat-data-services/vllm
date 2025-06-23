@@ -51,7 +51,7 @@ spec:
     value: "2147483647"
   - name: build-platforms
     value: 
-      - linux-large/ppc64le
+      - linux/ppc64le
   taskRunSpecs:
     - pipelineTaskName: ecosystem-cert-preflight-checks
       computeResources:
@@ -139,7 +139,7 @@ spec:
     value: "2147483647"
   - name: build-platforms
     value: 
-      - linux-large/s390x
+      - linux/s390x
   taskRunSpecs:
     - pipelineTaskName: ecosystem-cert-preflight-checks
       computeResources:
