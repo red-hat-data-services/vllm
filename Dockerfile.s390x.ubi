@@ -179,12 +179,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # Build and install vllm
 RUN --mount=type=cache,target=/root/.cache/uv \
-<<<<<<< HEAD
     VLLM_TARGET_DEVICE=cpu uv build --wheel --no-build-isolation && \
-=======
     SETUPTOOLS_SCM_PRETEND_VERSION="$VLLM_VERSION" \
     VLLM_TARGET_DEVICE=cpu python setup.py bdist_wheel && \
->>>>>>> 93b09c25b (Merge pull request #147 from red-hat-data-services/s390-patch)
     uv pip install "$(echo dist/*.whl)[tensorizer]"
 
 # setup non-root user for vllm
