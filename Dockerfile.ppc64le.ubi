@@ -173,6 +173,21 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     grep "opencv" requirements/common.txt | uv pip install -r /dev/stdin --no-build-isolation && \
     uv pip list
 
+###############################################################
+# Stage to build numactl
+###############################################################
+
+FROM base-builder AS numa-builder
+
+# Note: Building numactl with gcc-11. Compiling with gcc-13 in this builder stage will
+# trigger recompilation with gcc-11 (and require libtool) in the final stage where we do not have gcc-13
+ARG MAX_JOBS
+ARG NUMACTL_VERSION=2.0.19
+RUN git clone --recursive https://github.com/numactl/numactl.git -b v${NUMACTL_VERSION} \
+    && cd numactl \
+    && autoreconf -i && ./configure \
+    && make -j ${MAX_JOBS:-$(nproc)}
+
 
 ###############################################################
 # Stage to build vllm - this stage builds and installs
@@ -185,6 +200,7 @@ FROM base-builder AS vllmcache-builder
 COPY --from=torch-builder /tmp/control /dev/null
 COPY --from=arrow-builder /tmp/control /dev/null
 COPY --from=cv-builder /tmp/control /dev/null
+COPY --from=numa-builder /tmp/control /dev/null
 
 ARG VLLM_TGIS_ADAPTER_VERSION=0.7.0
 ARG VLLM_TARGET_DEVICE=cpu
@@ -201,31 +217,19 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,from=torch-builder,source=/torchwheels/,target=/torchwheels/,ro \
     --mount=type=bind,from=arrow-builder,source=/arrowwheels/,target=/arrowwheels/,ro \
     --mount=type=bind,from=cv-builder,source=/opencvwheels/,target=/opencvwheels/,ro \
+    --mount=type=bind,from=numa-builder,source=/numactl/,target=/numactl/,rw \
     --mount=type=bind,src=.,dst=/src/,rw \
     source /opt/rh/gcc-toolset-13/enable && \
-    uv pip install /opencvwheels/*.whl /arrowwheels/*.whl /torchwheels/*.whl && \
+    uv pip install pythran pybind11 /opencvwheels/*.whl /arrowwheels/*.whl /torchwheels/*.whl && \
     sed -i -e 's/.*torch.*//g' /src/pyproject.toml /src/requirements/*.txt && \
     uv pip install pandas /hf_wheels/*.whl && \
+    make -C /numactl install && \
     uv pip install -r /src/requirements/common.txt -r /src/requirements/cpu.txt -r /src/requirements/build.txt --no-build-isolation && \
     cd /src/ && \
     uv build --wheel --out-dir /vllmwheel/ --no-build-isolation && \
     uv pip install "$(echo /vllmwheel/*.whl)[tensorizer]" vllm-tgis-adapter==${VLLM_TGIS_ADAPTER_VERSION}
 
 
-###############################################################
-# Stage to build numactl
-###############################################################
-
-FROM base-builder AS numa-builder
-
-# Note: Building numactl with gcc-11. Compiling with gcc-13 in this builder stage will 
-# trigger recompilation with gcc-11 (and require libtool) in the final stage where we do not have gcc-13
-ARG MAX_JOBS
-ARG NUMACTL_VERSION=2.0.19
-RUN git clone --recursive https://github.com/numactl/numactl.git -b v${NUMACTL_VERSION} \
-    && cd numactl \
-    && autoreconf -i && ./configure \
-    && make -j ${MAX_JOBS:-$(nproc)}
 
 ###############################################################
 # Stage to build lapack
