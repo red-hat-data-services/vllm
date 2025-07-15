@@ -61,8 +61,9 @@ target "cuda" {
 
   args = {
     PYTHON_VERSION = "${PYTHON_VERSION}"
-    LIBSODIUM_VERSION = "1.0.20"
     VLLM_TGIS_ADAPTER_VERSION = "${VLLM_TGIS_ADAPTER_VERSION}"
+    CUDA_MAJOR =  "12"
+    CUDA_MINOR =  "8"
   }
 
   tags = [
@@ -80,7 +81,6 @@ target "rocm" {
   args = {
     PYTHON_VERSION = "${PYTHON_VERSION}"
     ROCM_VERSION = "${ROCM_VERSION}"
-    LIBSODIUM_VERSION = "1.0.20"
     VLLM_TGIS_ADAPTER_VERSION = "${VLLM_TGIS_ADAPTER_VERSION}"
   }
 

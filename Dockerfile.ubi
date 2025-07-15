@@ -30,6 +30,14 @@ RUN microdnf install -y --nodocs \
 ## Python Installer ############################################################
 FROM base as python-install
 ARG PYTHON_VERSION
+ARG CUDA_MAJOR
+ARG CUDA_MINOR
+
+ENV CUDA_MAJOR=${CUDA_MAJOR}
+ENV CUDA_MINOR=${CUDA_MINOR}
+ENV UV_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cu${CUDA_MAJOR}${CUDA_MINOR}
+ENV UV_INDEX_STRATEGY=unsafe-best-match
+ENV PIP_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cu${CUDA_MAJOR}${CUDA_MINOR}
 
 ENV VIRTUAL_ENV=/opt/vllm
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
