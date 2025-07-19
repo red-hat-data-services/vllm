@@ -297,7 +297,7 @@ nvidia-nvtx-cu12==12.4.127
     # via torch
 opencv-python-headless==4.10.0.84
     # via mistral-common
-packaging==24.1
+packaging==24.2
     # via
     #   accelerate
     #   black
