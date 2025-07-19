@@ -320,7 +320,7 @@ pandas==2.2.3
     #   evaluate
 pathspec==0.12.1
     # via black
-pathvalidate==3.2.1
+pathvalidate==3.3.1
     # via pytablewriter
 peft==0.13.2
     # via
