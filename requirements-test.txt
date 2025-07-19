@@ -286,7 +286,7 @@ nvidia-cusparse-cu12==12.3.1.170
     # via
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-nccl-cu12==2.21.5
+nvidia-nccl-cu12==2.27.6
     # via torch
 nvidia-nvjitlink-cu12==12.4.127
     # via
