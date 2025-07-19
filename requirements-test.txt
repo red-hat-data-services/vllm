@@ -355,7 +355,7 @@ psutil==6.1.0
     #   tensorizer
 py==1.11.0
     # via pytest-forked
-pyarrow==18.0.0
+pyarrow==18.1.0
     # via datasets
 pyasn1==0.6.1
     # via rsa
