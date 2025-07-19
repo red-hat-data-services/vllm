@@ -381,7 +381,7 @@ pytest==8.3.3
     #   pytest-forked
     #   pytest-rerunfailures
     #   pytest-shard
-pytest-asyncio==0.24.0
+pytest-asyncio==0.26.0
     # via -r requirements-test.in
 pytest-forked==1.6.0
     # via -r requirements-test.in
