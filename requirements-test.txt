@@ -442,7 +442,7 @@ rpds-py==0.20.1
     # via
     #   jsonschema
     #   referencing
-rsa==4.7.2
+rsa==4.9.1
     # via awscli
 s3transfer==0.10.3
     # via
