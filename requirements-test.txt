@@ -373,7 +373,7 @@ pyparsing==3.2.0
     # via matplotlib
 pytablewriter==1.2.0
     # via lm-eval
-pytest==8.3.3
+pytest==8.4.1
     # via
     #   -r requirements-test.in
     #   buildkite-test-collector
