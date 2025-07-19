@@ -369,7 +369,7 @@ pydantic[email]==2.9.2
     #   mistral-common
 pydantic-core==2.23.4
     # via pydantic
-pyparsing==3.2.0
+pyparsing==3.2.3
     # via matplotlib
 pytablewriter==1.2.0
     # via lm-eval
