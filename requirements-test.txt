@@ -235,7 +235,7 @@ nltk==3.9.1
     # via rouge-score
 numba==0.60.0
     # via librosa
-numexpr==2.10.1
+numexpr==2.11.0
     # via lm-eval
 numpy==1.26.4
     # via
