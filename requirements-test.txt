@@ -336,7 +336,7 @@ platformdirs==4.3.6
     # via
     #   black
     #   pooch
-pluggy==1.5.0
+pluggy==1.6.0
     # via pytest
 pooch==1.8.2
     # via librosa
