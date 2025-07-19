@@ -371,7 +371,7 @@ pydantic-core==2.23.4
     # via pydantic
 pyparsing==3.2.0
     # via matplotlib
-pytablewriter==1.2.0
+pytablewriter==1.2.1
     # via lm-eval
 pytest==8.3.3
     # via
