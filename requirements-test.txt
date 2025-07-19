@@ -450,7 +450,7 @@ s3transfer==0.10.3
     #   boto3
 sacrebleu==2.4.3
     # via lm-eval
-safetensors==0.4.5
+safetensors==0.5.3
     # via
     #   accelerate
     #   peft
