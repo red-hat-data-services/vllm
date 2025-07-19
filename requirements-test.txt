@@ -106,7 +106,7 @@ dnspython==2.7.0
     # via email-validator
 docutils==0.16
     # via awscli
-einops==0.8.0
+einops==0.8.1
     # via
     #   -r requirements-test.in
     #   encodec
