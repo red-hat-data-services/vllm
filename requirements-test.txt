@@ -342,7 +342,7 @@ pooch==1.8.2
     # via librosa
 portalocker==2.10.1
     # via sacrebleu
-propcache==0.2.0
+propcache==0.3.2
     # via yarl
 protobuf==5.28.3
     # via
