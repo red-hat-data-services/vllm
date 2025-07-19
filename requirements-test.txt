@@ -192,7 +192,7 @@ libnacl==2.1.0
     # via tensorizer
 librosa==0.10.2.post1
     # via -r requirements-test.in
-llvmlite==0.43.0
+llvmlite==0.44.0
     # via numba
 lm-eval[api]==0.4.4
     # via -r requirements-test.in
