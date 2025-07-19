@@ -344,7 +344,7 @@ portalocker==2.10.1
     # via sacrebleu
 propcache==0.2.0
     # via yarl
-protobuf==5.28.3
+protobuf==5.29.5
     # via
     #   ray
     #   tensorizer
