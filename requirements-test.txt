@@ -190,7 +190,7 @@ lazy-loader==0.4
     # via librosa
 libnacl==2.1.0
     # via tensorizer
-librosa==0.10.2.post1
+librosa==0.11.0
     # via -r requirements-test.in
 llvmlite==0.43.0
     # via numba
