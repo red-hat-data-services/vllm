@@ -252,7 +252,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-multiprocess==0.70.16
+multiprocess==0.70.18
     # via
     #   datasets
     #   evaluate
