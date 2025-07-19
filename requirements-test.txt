@@ -544,7 +544,7 @@ transformers-stream-generator==0.0.5
     # via -r requirements-test.in
 triton==3.1.0
     # via torch
-typepy[datetime]==1.3.2
+typepy[datetime]==1.3.4
     # via
     #   dataproperty
     #   pytablewriter
