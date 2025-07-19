@@ -207,7 +207,7 @@ mbstrdecoder==1.1.3
     #   dataproperty
     #   pytablewriter
     #   typepy
-mistral-common[opencv]==1.5.1
+mistral-common[opencv]==1.8.1
     # via
     #   -r requirements-test.in
     #   mistral-common
