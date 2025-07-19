@@ -363,7 +363,7 @@ pybind11==2.13.6
     # via lm-eval
 pycparser==2.22
     # via cffi
-pydantic[email]==2.9.2
+pydantic[email]==2.11.7
     # via
     #   datamodel-code-generator
     #   mistral-common
