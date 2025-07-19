@@ -122,7 +122,7 @@ evaluate==0.4.3
     # via lm-eval
 fastparquet==2024.11.0
     # via genai-perf
-fastrlock==0.8.2
+fastrlock==0.8.3
     # via cupy-cuda12x
 filelock==3.16.1
     # via
