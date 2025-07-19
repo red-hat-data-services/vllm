@@ -227,7 +227,7 @@ multiprocess==0.70.16
     # via
     #   datasets
     #   evaluate
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via black
 networkx==3.2.1
     # via torch
