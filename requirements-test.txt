@@ -466,7 +466,7 @@ scipy==1.13.1
     #   librosa
     #   scikit-learn
     #   sentence-transformers
-sentence-transformers==3.2.1
+sentence-transformers==3.4.1
     # via -r requirements-test.in
 sentencepiece==0.2.0
     # via mistral-common
