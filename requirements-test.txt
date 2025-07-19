@@ -229,7 +229,7 @@ markupsafe==3.0.2
     # via jinja2
 matplotlib==3.9.2
     # via -r requirements-test.in
-mbstrdecoder==1.1.3
+mbstrdecoder==1.1.4
     # via
     #   dataproperty
     #   pytablewriter
