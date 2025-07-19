@@ -448,7 +448,7 @@ s3transfer==0.10.3
     # via
     #   awscli
     #   boto3
-sacrebleu==2.4.3
+sacrebleu==2.5.1
     # via lm-eval
 safetensors==0.4.5
     # via
