@@ -244,6 +244,8 @@ RUN umask 002 && \
 
 COPY LICENSE /licenses/vllm.md
 COPY examples/*.jinja /app/data/template/
+RUN mkdir -p /opt/app-root && \
+    ln -s /app/data/template /opt/app-root/template
 
 USER 2000
 WORKDIR /home/vllm
