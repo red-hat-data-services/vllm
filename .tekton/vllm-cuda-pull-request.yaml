@@ -5,7 +5,7 @@ metadata:
     build.appstudio.openshift.io/repo: https://github.com/red-hat-data-services/vllm?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
-    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    build.appstudio.redhat.com/pull_request_number: "{{pull_request_number}}"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-comment: "^/build-cuda"
     pipelinesascode.tekton.dev/on-label: "[build-all]"
