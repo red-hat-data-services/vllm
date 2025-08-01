@@ -118,7 +118,7 @@ FROM rocm_devel AS build_flashattention
 ARG FA_GFX_ARCHS="gfx90a;gfx942"
 
 # the FA_BRANCH commit belongs to the ROCm/flash-attention fork, `main_perf` branch
-ARG FA_BRANCH="3cea2fb"
+ARG FA_BRANCH="1a7f4dfa"
 ARG MAX_JOBS
 ENV MAX_JOBS=${MAX_JOBS}
 
