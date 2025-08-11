@@ -216,8 +216,10 @@ RUN umask 002 && \
 
 COPY LICENSE /licenses/vllm.md
 COPY examples/*.jinja /app/data/template/
-RUN mkdir -p /opt/app-root && \
-    ln -s /app/data/template /opt/app-root/template
+COPY template/*.jinja /opt/app-root/template/
+RUN chown -R root:vllm /opt/app-root/template && chmod -R g+r /opt/app-root/template
+# RUN mkdir -p /opt/app-root && \
+#    ln -s /app/data/template /opt/app-root/template
 
 USER 2000
 WORKDIR /home/vllm
@@ -247,4 +249,4 @@ ENV GRPC_PORT=8033 \
     DISABLE_LOGPROBS_DURING_SPEC_DECODING=false
 
 USER 2000
-ENTRYPOINT ["python3", "-m", "vllm_tgis_adapter", "--uvicorn-log-level=warning"]
+ENTRYPOINT ["python3", "-m", "vllm.entrypoints.openai.api_server"]
