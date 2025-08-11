@@ -11,9 +11,10 @@ metadata:
     pipelinesascode.tekton.dev/on-label: "[build-all]"
     pipelinesascode.tekton.dev/on-event: "[pull_request]"
     pipelinesascode.tekton.dev/cancel-in-progress: "true"
+  creationTimestamp: null
   labels:
     appstudio.openshift.io/application: automation
-    appstudio.openshift.io/component: pull-request-pipelines-vllm-cuda
+    appstudio.openshift.io/component: pull-request-pipelines
     pipelines.appstudio.openshift.io/type: build
   name: vllm-cuda-on-pull-request
   namespace: rhoai-tenant
@@ -29,7 +30,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/rhoai/pull-request-pipelines:vllm-cuda-{{revision}}
+    value: quay.io/redhat-user-workloads/rhoai-tenant/pull-request-pipelines:vllm-cuda-{{revision}}
   - name: dockerfile
     value: Dockerfile.ubi
   - name: path-context
