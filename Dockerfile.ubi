@@ -174,7 +174,7 @@ RUN umask 002 && \
 
 COPY LICENSE /licenses/vllm.md
 COPY examples/*.jinja /app/data/template/
-COPY template/*.jinja /opt/app-root/template/
+COPY examples/*.jinja /opt/app-root/template/
 RUN chown -R vllm /opt-app-root/template && chmod -R g+r /opt/app-root/template
 
 USER 2000
