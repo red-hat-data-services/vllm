@@ -145,7 +145,7 @@ RUN --mount=type=bind,from=build,src=/workspace/dist,target=/workspace/dist \
         --extra-index-url="https://download.pytorch.org/whl/cu128" --index-strategy='unsafe-best-match' \
         "$(echo dist/*.whl)[audio,video,tensorizer]" --verbose \
         "https://storage.googleapis.com/nm-public-pypi/dist/flashinfer_python-0.2.8-cp39-abi3-linux_x86_64.whl" \
-    && uv pip install -U nvidia-nccl-cu12==2.26.5
+    && uv pip install -U nvidia-nccl-cu12==2.26.5 blobfile
 
 ENV HF_HUB_OFFLINE=1 \
     HOME=/home/vllm \

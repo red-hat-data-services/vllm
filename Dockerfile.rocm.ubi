@@ -189,7 +189,8 @@ RUN --mount=type=bind,from=build_amdsmi,src=/install,target=/install/amdsmi/ \
         --extra-index-url "https://download.pytorch.org/whl/nightly/rocm${version}" \
         /install/amdsmi/*.whl\
         /install/flashattention/*.whl\
-        "$(echo /install/vllm/*.whl)[audio,video,tensorizer]"
+        "$(echo /install/vllm/*.whl)[audio,video,tensorizer]" \
+    && uv pip install blobfile
 
 ENV HF_HUB_OFFLINE=1 \
     HOME=/home/vllm \
