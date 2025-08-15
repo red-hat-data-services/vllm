@@ -5,7 +5,7 @@ ARG VLLM_VERSION
 # Default ROCm ARCHes to build vLLM for.
 ARG PYTORCH_ROCM_ARCH="gfx908;gfx90a;gfx942;gfx1100"
 ARG MAX_JOBS=12
-ARG VLLM_TGIS_ADAPTER_VERSION=0.7.1
+ARG VLLM_TGIS_ADAPTER_VERSION=0.8.0
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:${BASE_UBI_IMAGE_TAG} AS base
 
@@ -118,7 +118,7 @@ FROM rocm_devel AS build_flashattention
 ARG FA_GFX_ARCHS="gfx90a;gfx942"
 
 # the FA_BRANCH commit belongs to the ROCm/flash-attention fork, `main_perf` branch
-ARG FA_BRANCH="3cea2fb"
+ARG FA_BRANCH="1a7f4dfa"
 ARG MAX_JOBS
 ENV MAX_JOBS=${MAX_JOBS}
 
@@ -162,27 +162,6 @@ RUN --mount=type=cache,target=/root/.cache/ccache \
         SETUPTOOLS_SCM_PRETEND_VERSION="$VLLM_VERSION" \
     python3 setup.py bdist_wheel --dist-dir=dist
 
-#################### libsodium Build IMAGE ####################
-FROM rocm_base as libsodium-builder
-
-RUN microdnf install -y --nodocs gcc gzip tar \
-    && microdnf clean all
-
-WORKDIR /usr/src/libsodium
-
-ARG LIBSODIUM_VERSION
-RUN curl -LO https://github.com/jedisct1/libsodium/releases/download/${LIBSODIUM_VERSION}-RELEASE/libsodium-${LIBSODIUM_VERSION}.tar.gz \
-    && tar -xzvf libsodium*.tar.gz \
-    && rm -f libsodium*.tar.gz \
-    && mv libsodium*/* ./
-
-RUN CFLAGS="-O3 -Wall -Werror=format-security -Wno-unused-function -Wp,-D_GLIBCXX_ASSERTIONS -fstack-protector-strong -fstack-clash-protection -fcf-protection" \
-    ./configure \
-        --prefix="/usr/" \
-        --libdir=/usr/lib64 && \
-    make -j $(nproc) && \
-    make check
-
 ##################################################################################################
 
 FROM rocm_base AS vllm-openai
@@ -199,11 +178,6 @@ ENV PATH=$VIRTUAL_ENV/bin:$PATH
 RUN microdnf install -y --setopt=install_weak_deps=0 --nodocs gcc rsync && \
     microdnf clean all
 
-# Install libsodium for Tensorizer encryption
-RUN --mount=type=bind,from=libsodium-builder,src=/usr/src/libsodium,target=/usr/src/libsodium \
-    cd /usr/src/libsodium \
-    && make install
-
 RUN --mount=type=bind,from=build_amdsmi,src=/install,target=/install/amdsmi/ \
     --mount=type=bind,from=build_flashattention,src=/install,target=/install/flashattention \
     --mount=type=bind,from=build_vllm,src=/workspace/dist,target=/install/vllm/ \
@@ -215,14 +189,14 @@ RUN --mount=type=bind,from=build_amdsmi,src=/install,target=/install/amdsmi/ \
         --extra-index-url "https://download.pytorch.org/whl/nightly/rocm${version}" \
         /install/amdsmi/*.whl\
         /install/flashattention/*.whl\
-        "$(echo /install/vllm/*.whl)[audio,video,tensorizer]"
+        "$(echo /install/vllm/*.whl)[audio,video,tensorizer]" \
+    && uv pip install blobfile
 
 ENV HF_HUB_OFFLINE=1 \
     HOME=/home/vllm \
     # Allow requested max length to exceed what is extracted from the
     # config.json
     # see: https://github.com/vllm-project/vllm/pull/7080
-    VLLM_ALLOW_LONG_MAX_MODEL_LEN=1 \
     VLLM_USAGE_SOURCE=production-docker-image \
     VLLM_WORKER_MULTIPROC_METHOD=spawn \
     VLLM_NO_USAGE_STATS=1 \
@@ -230,7 +204,6 @@ ENV HF_HUB_OFFLINE=1 \
     TOKENIZERS_PARALLELISM=false  \
     RAY_EXPERIMENTAL_NOSET_ROCR_VISIBLE_DEVICES=1 \
     VLLM_USE_TRITON_FLASH_ATTN=0 \
-    VLLM_USE_V1=1 \
     HIP_FORCE_DEV_KERNARG=1 \
     OUTLINES_CACHE_DIR=/tmp/outlines \
     NUMBA_CACHE_DIR=/tmp/numba \
@@ -244,6 +217,10 @@ RUN umask 002 && \
 
 COPY LICENSE /licenses/vllm.md
 COPY examples/*.jinja /app/data/template/
+COPY examples/*.jinja /opt/app-root/template/
+RUN chown -R vllm /opt/app-root/template && chmod -R g+r /opt/app-root/template
+# RUN mkdir -p /opt/app-root && \
+#    ln -s /app/data/template /opt/app-root/template
 
 USER 2000
 WORKDIR /home/vllm
@@ -273,4 +250,4 @@ ENV GRPC_PORT=8033 \
     DISABLE_LOGPROBS_DURING_SPEC_DECODING=false
 
 USER 2000
-ENTRYPOINT ["python3", "-m", "vllm_tgis_adapter", "--uvicorn-log-level=warning"]
+ENTRYPOINT ["python3", "-m", "vllm.entrypoints.openai.api_server"]
