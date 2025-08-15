@@ -195,6 +195,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
         "$(echo /workspace/dist/*.whl)[audio,video,tensorizer]" \
         vllm-tgis-adapter==${VLLM_TGIS_ADAPTER_VERSION}
 
+# Upgrade NCCL back to required version after vllm-tgis-adapter installation
+RUN --mount=type=cache,target=/root/.cache/uv \
+    HOME=/root uv pip install -U nvidia-nccl-cu12==2.26.5
+
 ENV GRPC_PORT=8033 \
     PORT=8000 \
     # As an optimization, vLLM disables logprobs when using spec decoding by
@@ -204,4 +208,3 @@ ENV GRPC_PORT=8033 \
     DISABLE_LOGPROBS_DURING_SPEC_DECODING=false
 
 USER 2000
-ENTRYPOINT ["python3", "-m", "vllm.entrypoints.openai.api_server"]
