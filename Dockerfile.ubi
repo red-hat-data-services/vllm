@@ -67,10 +67,10 @@ ENV CUDA_HOME="/usr/local/cuda" \
 ENV LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${CUDA_HOME}/lib64/stubs/:${CUDA_HOME}/extras/CUPTI/lib64:${LD_LIBRARY_PATH}"
 
 RUN microdnf install -y \
-        cuda-nvcc-12-8 cuda-nvtx-12-8 cuda-libraries-devel-12-8 && \
+        cuda-nvcc-12-8 cuda-nvtx-12-8 cuda-libraries-devel-12-8 \
+        gcc-toolset-14 && \
     microdnf clean all && \
     ln -s ${CUDA_HOME}/lib64/stubs/libcuda.so /usr/lib64/
-
 
 ## Python cuda base #################################################################
 FROM cuda-base AS python-cuda-base
@@ -132,12 +132,12 @@ RUN --mount=type=cache,target=/root/.cache/ccache \
             CXXFLAGS="$CFLAGS $CXXFLAGS" \
             CMAKE_BUILD_TYPE=Release \
             SETUPTOOLS_SCM_PRETEND_VERSION="${VLLM_VERSION}" \
-            python3 setup.py bdist_wheel --dist-dir=dist ;\
+            scl enable gcc-toolset-14 -- python3 setup.py bdist_wheel --dist-dir=dist ;\
     else \
         env CXXFLAGS="$CFLAGS $CXXFLAGS" \
             CMAKE_BUILD_TYPE=Release \
             SETUPTOOLS_SCM_PRETEND_VERSION="${VLLM_VERSION}" \
-            python3 setup.py bdist_wheel --dist-dir=dist ;\
+            scl enable gcc-toolset-14 -- python3 setup.py bdist_wheel --dist-dir=dist ;\
     fi
 
 
@@ -155,19 +155,14 @@ ENV LD_LIBRARY_PATH="${VIRTUAL_ENV}/lib/python${PYTHON_VERSION}/site-packages/nv
 ENV LD_LIBRARY_PATH="${VIRTUAL_ENV}/lib/python${PYTHON_VERSION}/site-packages/nvidia/cuda_runtime/lib:${LD_LIBRARY_PATH}"
 ENV LD_LIBRARY_PATH="${VIRTUAL_ENV}/lib/python${PYTHON_VERSION}/site-packages/nvidia/nvtx/lib:${LD_LIBRARY_PATH}"
 
-# Triton needs a CC compiler
-RUN microdnf install -y --nodocs gcc \
-    rsync \
-    && microdnf clean all
-
 # install vllm wheel first, so that torch etc will be installed
 # nccl install is temp until torch is upgraded: https://github.com/vllm-project/vllm/issues/19166
 RUN --mount=type=bind,from=build,src=/workspace/dist,target=/workspace/dist \
     --mount=type=cache,target=/root/.cache/uv \
-    uv pip install \
+    scl enable gcc-toolset-14 -- uv pip install \
         --extra-index-url="https://download.pytorch.org/whl/cu128" --index-strategy='unsafe-best-match' \
         "$(echo dist/*.whl)[audio,video,tensorizer]" --verbose \
-    && uv pip install -U nvidia-nccl-cu12==2.26.5 blobfile
+    && scl enable gcc-toolset-14 -- uv pip install -U nvidia-nccl-cu12==2.26.5 blobfile
 
 # Install FlashInfer from source
 ARG FLASHINFER_GIT_REPO="https://github.com/flashinfer-ai/flashinfer.git"
@@ -183,8 +178,8 @@ RUN --mount=type=cache,target=/root/.cache/uv bash - <<'BASH'
     echo "🏗️  Building FlashInfer for arches: ${TORCH_CUDA_ARCH_LIST}"
     # Needed to build AOT kernels
     pushd flashinfer
-        python3 -m flashinfer.aot
-        uv pip install --system --no-build-isolation --force-reinstall --no-deps .
+        scl enable gcc-toolset-14 -- python3 -m flashinfer.aot
+        scl enable gcc-toolset-14 -- uv pip install --system --no-build-isolation --force-reinstall --no-deps .
     popd
     rm -rf flashinfer
 BASH
