@@ -149,7 +149,7 @@ RUN --mount=type=cache,target=/root/.cache/ccache \
 
 
 ## Release #####################################################################
-FROM python-install AS vllm-openai
+FROM build-${TARGETARCH} AS vllm-openai
 ARG PYTHON_VERSION
 
 WORKDIR /workspace
