@@ -107,6 +107,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # git is required for the cutlass kernels
 RUN rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && rpm -ql epel-release && microdnf install -y --nodocs git ccache && microdnf clean all
 
+RUN curl -Lo /etc/yum.repos.d/galileo-numactl-rhel-9.repo \
+    https://copr.fedorainfracloud.org/coprs/galileo/numactl/repo/rhel-9/galileo-numactl-rhel-9.repo && \
+    microdnf install -y --nodocs numactl-devel && \
+    microdnf clean all
+
 COPY . .
 
 # max jobs used by Ninja to build extensions
