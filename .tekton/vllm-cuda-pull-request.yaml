@@ -52,8 +52,8 @@ spec:
     value: "2147483647"
   - name: build-platforms
     value:
-    - linux-extra-fast/amd64
-    - linux-c4xlarge/arm64
+    - linux-d160-m4xlarge/amd64
+    - linux-d160-m4xlarge/arm64
   taskRunSpecs:
   - pipelineTaskName: ecosystem-cert-preflight-checks
     computeResources:
