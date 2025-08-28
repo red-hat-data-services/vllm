@@ -1,7 +1,7 @@
 ## Global Args #################################################################
 ARG BASE_UBI_IMAGE_TAG=9.5-1742914212
 ARG PYTHON_VERSION=3.12
-ARG VLLM_VERSION
+ARG VLLM_VERSION="v0.9.1.0"
 ARG VLLM_TGIS_ADAPTER_VERSION="0.7.1"
 ARG TORCH_CUDA_ARCH_LIST="7.5 8.0 8.6 8.9 9.0 10.0 12.0+PTX"
 ARG vllm_fa_cmake_gpu_arches='80-real;90-real'
