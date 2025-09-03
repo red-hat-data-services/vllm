@@ -18,7 +18,11 @@ struct KernelVecType<float> {
 
 template <>
 struct KernelVecType<c10::BFloat16> {
+#ifdef ARM_BF16_SUPPORT
   using load_vec_type = vec_op::BF16Vec16;
+#else
+  using load_vec_type = vec_op::FP16Vec16;
+#endif
   using azp_adj_load_vec_type = vec_op::INT32Vec16;
   using cvt_vec_type = vec_op::FP32Vec16;
 };
