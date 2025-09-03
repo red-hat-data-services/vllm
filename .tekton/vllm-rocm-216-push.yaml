@@ -20,7 +20,8 @@ metadata:
   namespace: rhoai-tenant
 spec:
   timeouts:
-    pipeline: 8h
+    pipeline: 9h
+    tasks: 6h
   params:
   - name: git-url
     value: '{{source_url}}'
@@ -28,25 +29,31 @@ spec:
     value: '{{revision}}'
   - name: output-image
     value: quay.io/modh/vllm:{{target_branch}}-rocm
+  - name: additional-tags
+    value:
+    - '{{target_branch}}-rocm-{{revision}}'
   - name: dockerfile
     value: Dockerfile.rocm.ubi
   - name: path-context
     value: .
   - name: additional-labels
     value: []
-  - name: additional-tags
-    value:
-    - '{{target_branch}}-rocm-{{revision}}'
   - name: hermetic
     value: "false"
   - name: build-source-image
     value: "false"
-  - name: skip-checks
-    value: "false"
   - name: build-image-index
+    value: "true"
+  - name: rebuild
+    value: true
+  - name: skip-checks
     value: "true"
   - name: build-args
     value: [max_jobs=48]
+  - name: fetch-git-tags
+    value: true
+  - name: clone-depth
+    value: "2147483647"
   - name: build-platforms
     value:
     - linux-extra-fast/amd64

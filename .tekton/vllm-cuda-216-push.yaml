@@ -19,6 +19,9 @@ metadata:
   name: vllm-cuda-216-on-push
   namespace: rhoai-tenant
 spec:
+  timeouts:
+    pipeline: 10h
+    tasks: 8h
   params:
   - name: git-url
     value: '{{source_url}}'
@@ -26,45 +29,51 @@ spec:
     value: '{{revision}}'
   - name: output-image
     value: quay.io/modh/vllm:{{target_branch}}-cuda
+  - name: additional-tags
+    value:
+    - '{{target_branch}}-cuda-{{revision}}'
   - name: dockerfile
     value: Dockerfile.ubi
   - name: path-context
     value: .
   - name: additional-labels
     value: []
-  - name: additional-tags
-    value:
-    - '{{target_branch}}-cuda-{{revision}}'
   - name: hermetic
     value: "false"
   - name: build-source-image
     value: "false"
-  - name: skip-checks
-    value: "false"
   - name: build-image-index
     value: "true"
+  - name: rebuild
+    value: true
+  - name: skip-checks
+    value: true
   - name: build-args
     value: [max_jobs=48]
+  - name: fetch-git-tags
+    value: true
+  - name: clone-depth
+    value: "2147483647"
   - name: build-platforms
     value:
     - linux-extra-fast/amd64
   taskRunSpecs:
-  - pipelineTaskName: ecosystem-cert-preflight-checks
-    computeResources:
-      requests:
-        cpu: '2'
-        memory: 10Gi
-      limits:
-        cpu: '4'
-        memory: 20Gi
-  - pipelineTaskName: clair-scan
-    computeResources:
-      requests:
-        cpu: '2'
-        memory: 10Gi
-      limits:
-        cpu: '4'
-        memory: 20Gi
+    - pipelineTaskName: ecosystem-cert-preflight-checks
+      computeResources:
+        requests:
+          cpu: '8'
+          memory: 16Gi
+        limits:
+          cpu: '16'
+          memory: 32Gi
+    - pipelineTaskName: clair-scan
+      computeResources:
+        requests:
+          cpu: '8'
+          memory: 16Gi
+        limits:
+          cpu: '16'
+          memory: 32Gi
   pipelineRef:
     resolver: git
     params:
