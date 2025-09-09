@@ -12,7 +12,6 @@ metadata:
       event == "push"
       && target_branch == "rhoai-2.25"
       && ( !".tekton/**".pathChanged() || ".tekton/odh-vllm-cuda-v2-25-push.yaml".pathChanged() )
-  creationTimestamp: null
   labels:
     appstudio.openshift.io/application: rhoai-v2-25
     appstudio.openshift.io/component: odh-vllm-cuda-v2-25
@@ -47,15 +46,10 @@ spec:
     value: true
   - name: build-image-index
     value: true
-  - name: build-args-file
-    value: argfile.conf
-  - name: fetch-git-tags
-    value: true
-  - name: clone-depth
-    value: "2147483647"
   - name: build-platforms
     value:
-    - linux-extra-fast/amd64
+    - linux/x86_64
+    - linux-m2xlarge/arm64
   taskRunSpecs:
     - pipelineTaskName: ecosystem-cert-preflight-checks
       computeResources:
