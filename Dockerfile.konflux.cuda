@@ -3,7 +3,7 @@ ARG RHAIIS_VERSION=3.2.1
 ARG VLLM_TGIS_ADAPTER_VERSION="0.8.0"
 
 ## Base Layer ##################################################################
-FROM rhaiis/vllm-rocm-rhel9:${RHAIIS_VERSION} as vllm-grpc-adapter
+FROM registry.redhat.io/rhaiis/vllm-cuda-rhel9:${RHAIIS_VERSION} as vllm-grpc-adapter
 
 USER root
 
