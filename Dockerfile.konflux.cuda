@@ -1,15 +1,8 @@
 ## Global Args #################################################################
 ARG RHAIIS_VERSION=3.2.1
-ARG VLLM_TGIS_ADAPTER_VERSION="0.8.0"
 
 ## Base Layer ##################################################################
 FROM registry.redhat.io/rhaiis/vllm-cuda-rhel9:${RHAIIS_VERSION} as vllm-grpc-adapter
-
-USER root
-
-# Upgrade NCCL back to required version after vllm-tgis-adapter installation
-RUN --mount=type=cache,target=/root/.cache/uv \
-    HOME=/root uv pip install -U nvidia-nccl-cu12==2.26.5
 
 ENV GRPC_PORT=8033 \
     PORT=8000 \
