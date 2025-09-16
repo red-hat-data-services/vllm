@@ -31,7 +31,7 @@ spec:
   - name: output-image
     value: quay.io/rhoai/pull-request-pipelines:vllm-cuda-{{revision}}
   - name: dockerfile
-    value: Dockerfile.ubi
+    value: Dockerfile.konflux.cuda
   - name: path-context
     value: .
   - name: hermetic
