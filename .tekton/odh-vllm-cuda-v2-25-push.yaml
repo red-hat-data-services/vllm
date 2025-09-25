@@ -49,8 +49,7 @@ spec:
   - name: build-platforms
     value:
     - linux/x86_64
-    # https://redhat-internal.slack.com/archives/C07TF3MBMMW/p1757416368065659?thread_ts=1757411802.477599&cid=C07TF3MBMMW
-    #- linux-m2xlarge/arm64
+    - linux-m2xlarge/arm64
   taskRunSpecs:
     - pipelineTaskName: ecosystem-cert-preflight-checks
       computeResources:
