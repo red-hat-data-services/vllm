@@ -1,8 +1,24 @@
 ## Global Args #################################################################
 ARG RHAIIS_VERSION=3.2.2
+ARG VLLM_TGIS_ADAPTER_VERSION="0.8.1"
 
 ## Base Layer ##################################################################
 FROM registry.redhat.io/rhaiis/vllm-cuda-rhel9:${RHAIIS_VERSION} as vllm-grpc-adapter
+
+# Install uv and setup cache directory with correct permissions
+USER root
+RUN pip install uv && \
+    mkdir -p /opt/app-root/.cache/uv && \
+    chown -R 2000:2000 /opt/app-root/.cache && \
+    chmod -R 775 /opt/app-root/.cache
+
+## Install vLLM-TGIS-Adapter ####################################################
+ARG VLLM_TGIS_ADAPTER_VERSION
+USER 2000
+RUN --mount=type=cache,target=/opt/app-root/.cache/uv,uid=2000,gid=2000 \
+    HOME=/opt/app-root uv pip install \
+        --extra-index-url="https://download.pytorch.org/whl/cu128" \
+        vllm-tgis-adapter==${VLLM_TGIS_ADAPTER_VERSION}
 
 ENV GRPC_PORT=8033 \
     PORT=8000 \
@@ -12,7 +28,7 @@ ENV GRPC_PORT=8033 \
     # see: https://github.com/vllm-project/vllm/pull/6485
     DISABLE_LOGPROBS_DURING_SPEC_DECODING=false
 
-USER 2000
+
 ENTRYPOINT ["python3", "-m", "vllm_tgis_adapter", "--uvicorn-log-level=warning"]
 
 LABEL name="rhoai/odh-vllm-cuda-rhel9" \
