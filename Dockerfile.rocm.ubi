@@ -5,7 +5,7 @@ ARG VLLM_VERSION
 # Default ROCm ARCHes to build vLLM for.
 ARG PYTORCH_ROCM_ARCH="gfx908;gfx90a;gfx942;gfx1100"
 ARG MAX_JOBS=12
-ARG VLLM_TGIS_ADAPTER_VERSION=0.8.0
+ARG VLLM_TGIS_ADAPTER_VERSION=0.8.1
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:${BASE_UBI_IMAGE_TAG} AS base
 
