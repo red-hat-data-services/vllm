@@ -11,7 +11,7 @@ USER root
 ## Install vLLM-TGIS-Adapter ####################################################
 RUN pip install --no-cache --no-deps vllm-tgis-adapter==${VLLM_TGIS_ADAPTER_VERSION}
 
-USER 2000
+USER 1001
 
 ENV GRPC_PORT=8033 \
     PORT=8000 \
