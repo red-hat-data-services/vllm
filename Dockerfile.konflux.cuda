@@ -30,4 +30,5 @@ LABEL name="rhoai/odh-vllm-cuda-rhel9" \
       io.k8s.description="GPU-accelerated vLLM build using NVIDIA CUDA for high-performance inference." \
       description="GPU-accelerated vLLM build using NVIDIA CUDA for high-performance inference." \
       summary="GPU-accelerated vLLM build using NVIDIA CUDA for high-performance inference." \
+      
       com.redhat.license_terms="https://www.redhat.com/licenses/Red_Hat_Standard_EULA_20191108.pdf"
