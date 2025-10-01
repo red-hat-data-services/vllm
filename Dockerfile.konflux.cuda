@@ -8,8 +8,8 @@ FROM registry.redhat.io/rhaiis/vllm-cuda-rhel9:${RHAIIS_VERSION} as vllm-grpc-ad
 ARG VLLM_TGIS_ADAPTER_VERSION="0.9.0.post1"
 USER root
 
-## Install vLLM-TGIS-Adapter ####################################################
-RUN pip install --no-cache --no-deps vllm-tgis-adapter==${VLLM_TGIS_ADAPTER_VERSION}
+## Build vLLM-TGIS-Adapter from source #########################################
+RUN pip install --no-cache-dir --no-deps git+https://github.com/opendatahub-io/vllm-tgis-adapter@${VLLM_TGIS_ADAPTER_VERSION}
 
 USER 1001
 
