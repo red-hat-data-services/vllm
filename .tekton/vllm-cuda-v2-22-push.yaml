@@ -50,6 +50,7 @@ spec:
     value: 
     - max_jobs=6
     - nvcc_threads=2
+    - VLLM_VERSION=0.9.0.1
   - name: fetch-git-tags
     value: true
   - name: clone-depth
