@@ -138,7 +138,7 @@ RUN --mount=type=bind,from=build,src=/workspace/dist,target=/workspace/dist \
     uv pip install \
         --extra-index-url="https://download.pytorch.org/whl/cu128" --index-strategy='unsafe-best-match' \
         "$(echo dist/*.whl)[audio,video,tensorizer]" --verbose \
-        "https://storage.googleapis.com/neuralmagic-public-pypi/dist/flashinfer_python-0.2.5-cp38-abi3-linux_x86_64.whl"
+        "https://storage.googleapis.com/nm-public-pypi/dist/flashinfer_python-0.2.5-cp38-abi3-linux_x86_64.whl"
 
 ENV HF_HUB_OFFLINE=1 \
     HOME=/home/vllm \
