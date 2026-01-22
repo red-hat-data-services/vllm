@@ -11,7 +11,6 @@ metadata:
       event == "push"
       && target_branch == "rhoai-2.16"
       && ( !".tekton/**".pathChanged() || ".tekton/vllm-rocm-216-push.yaml".pathChanged() )
-  creationTimestamp:
   labels:
     appstudio.openshift.io/application: vllm
     appstudio.openshift.io/component: vllm-rocm-216
@@ -36,8 +35,6 @@ spec:
     value: Dockerfile.rocm.ubi
   - name: path-context
     value: .
-  - name: additional-labels
-    value: []
   - name: hermetic
     value: "false"
   - name: build-source-image
@@ -57,6 +54,8 @@ spec:
   - name: build-platforms
     value:
     - linux-extra-fast/amd64
+  - name: rhoai-version
+    value: "2.16.4"
   taskRunSpecs:
   - pipelineTaskName: ecosystem-cert-preflight-checks
     computeResources:
