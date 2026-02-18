@@ -15,7 +15,7 @@ metadata:
     appstudio.openshift.io/application: automation
     appstudio.openshift.io/component: pull-request-pipelines-vllm-cuda
     pipelines.appstudio.openshift.io/type: build
-  name: vllm-cuda-on-pull-request
+  name: vllm-cuda-on-pull-request-55192
   namespace: rhoai-tenant
 spec:
   timeouts:
