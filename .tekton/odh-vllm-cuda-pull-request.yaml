@@ -29,6 +29,8 @@ spec:
     value: '{{source_url}}'
   - name: revision
     value: '{{revision}}'
+  - name: rhoai-version
+    value: "2.25.3"
   - name: output-image
     value: quay.io/redhat-user-workloads/rhoai-tenant/pull-request-pipelines:vllm-cuda-{{revision}}
   - name: dockerfile
