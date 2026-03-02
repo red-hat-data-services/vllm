@@ -104,7 +104,7 @@ dill==0.3.8
     #   multiprocess
 dnspython==2.7.0
     # via email-validator
-docutils==0.16
+docutils==0.22.4
     # via awscli
 einops==0.8.0
     # via
