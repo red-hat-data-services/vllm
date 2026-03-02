@@ -78,7 +78,7 @@ contourpy==1.3.0
     # via matplotlib
 cramjam==2.9.0
     # via fastparquet
-cupy-cuda12x==13.3.0
+cupy-cuda12x==13.6.0
     # via ray
 cycler==0.12.1
     # via matplotlib
