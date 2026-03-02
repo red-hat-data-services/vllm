@@ -92,7 +92,7 @@ datasets==3.0.2
     # via
     #   evaluate
     #   lm-eval
-decorator==5.1.1
+decorator==5.2.1
     # via librosa
 decord==0.6.0
     # via -r requirements-test.in
