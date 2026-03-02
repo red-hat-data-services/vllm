@@ -83,7 +83,7 @@ dataproperty==1.0.1
     # via
     #   pytablewriter
     #   tabledata
-datasets==3.0.2
+datasets==3.6.0
     # via
     #   evaluate
     #   lm-eval
