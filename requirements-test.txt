@@ -61,7 +61,7 @@ chardet==5.2.0
     # via mbstrdecoder
 charset-normalizer==3.4.0
     # via requests
-click==8.1.7
+click==8.3.1
     # via
     #   black
     #   nltk
