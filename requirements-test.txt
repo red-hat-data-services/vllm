@@ -124,7 +124,7 @@ fastparquet==2024.11.0
     # via genai-perf
 fastrlock==0.8.2
     # via cupy-cuda12x
-filelock==3.16.1
+filelock==3.25.0
     # via
     #   datasets
     #   huggingface-hub
