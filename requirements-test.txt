@@ -558,7 +558,7 @@ soxr==0.5.0.post1
     # via librosa
 sqlitedict==2.1.0
     # via lm-eval
-statsmodels==0.14.4
+statsmodels==0.14.6
     # via genai-perf
 sympy==1.13.1
     # via
