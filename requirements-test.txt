@@ -4,7 +4,7 @@
 #
 # python3.12 -m piptools compile requirements-test.in -o requirements-test.txt
 #
-absl-py==2.1.0
+absl-py==2.4.0
     # via rouge-score
 accelerate==1.0.1
     # via
