@@ -540,7 +540,7 @@ scipy==1.13.1
     #   vocos
 sentence-transformers==3.2.1
     # via -r requirements-test.in
-sentencepiece==0.2.0
+sentencepiece==0.2.1
     # via mistral-common
 six==1.16.0
     # via
