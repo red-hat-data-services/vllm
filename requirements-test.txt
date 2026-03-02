@@ -10,7 +10,7 @@ accelerate==1.0.1
     # via
     #   lm-eval
     #   peft
-aiohappyeyeballs==2.4.3
+aiohappyeyeballs==2.6.1
     # via aiohttp
 aiohttp==3.10.10
     # via
