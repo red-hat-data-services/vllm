@@ -96,7 +96,7 @@ decorator==5.1.1
     # via librosa
 decord==0.6.0
     # via -r requirements-test.in
-dill==0.3.8
+dill==0.4.1
     # via
     #   datasets
     #   evaluate
