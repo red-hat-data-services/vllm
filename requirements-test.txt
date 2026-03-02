@@ -35,7 +35,7 @@ attrs==24.2.0
     #   referencing
 audioread==3.0.1
     # via librosa
-awscli==1.35.23
+awscli==1.44.49
     # via -r requirements-test.in
 bitsandbytes==0.45.0
     # via -r requirements-test.in
