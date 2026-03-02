@@ -25,7 +25,7 @@ annotated-types==0.7.0
     # via pydantic
 anyio==4.6.2.post1
     # via httpx
-argcomplete==3.5.1
+argcomplete==3.6.3
     # via datamodel-code-generator
 attrs==24.2.0
     # via
