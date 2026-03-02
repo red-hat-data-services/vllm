@@ -30,7 +30,7 @@ repos:
     types_or: [c++, cuda]
     args: [--style=file, --verbose]
 - repo: https://github.com/jackdewinter/pymarkdown
-  rev: v0.9.27
+  rev: v0.9.35
   hooks:
   - id: pymarkdown
     files: docs/.*
