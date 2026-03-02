@@ -103,7 +103,7 @@ docutils==0.16
     # via awscli
 einops==0.8.0
     # via -r requirements-test.in
-email-validator==2.2.0
+email-validator==2.3.0
     # via pydantic
 evaluate==0.4.3
     # via lm-eval
