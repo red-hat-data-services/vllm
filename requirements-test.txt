@@ -150,7 +150,7 @@ huggingface-hub==0.26.2
     #   timm
     #   tokenizers
     #   transformers
-idna==3.10
+idna==3.11
     # via
     #   anyio
     #   email-validator
