@@ -33,7 +33,7 @@ attrs==24.2.0
     #   jsonlines
     #   jsonschema
     #   referencing
-audioread==3.0.1
+audioread==3.1.0
     # via librosa
 awscli==1.35.23
     # via -r requirements-test.in
