@@ -41,7 +41,7 @@ bitsandbytes==0.45.0
     # via -r requirements-test.in
 black==24.10.0
     # via datamodel-code-generator
-boto3==1.35.57
+boto3==1.42.59
     # via tensorizer
 botocore==1.35.57
     # via
