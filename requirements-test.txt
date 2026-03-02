@@ -117,7 +117,7 @@ filelock==3.16.1
     #   torch
     #   transformers
     #   triton
-fonttools==4.54.1
+fonttools==4.61.1
     # via matplotlib
 frozenlist==1.5.0
     # via
