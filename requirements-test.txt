@@ -136,7 +136,7 @@ fonttools==4.54.1
     # via matplotlib
 frozendict==2.4.6
     # via einx
-frozenlist==1.5.0
+frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
