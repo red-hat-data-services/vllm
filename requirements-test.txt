@@ -84,7 +84,7 @@ cycler==0.12.1
     # via matplotlib
 datamodel-code-generator==0.26.3
     # via -r requirements-test.in
-dataproperty==1.0.1
+dataproperty==1.1.0
     # via
     #   pytablewriter
     #   tabledata
