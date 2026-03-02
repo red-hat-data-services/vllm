@@ -171,7 +171,7 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-joblib==1.4.2
+joblib==1.5.3
     # via
     #   librosa
     #   nltk
