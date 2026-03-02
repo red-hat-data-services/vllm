@@ -52,7 +52,7 @@ bounded-pool-executor==0.0.3
     # via pqdm
 buildkite-test-collector==0.1.9
     # via -r requirements-test.in
-certifi==2024.8.30
+certifi==2024.12.14
     # via
     #   httpcore
     #   httpx
