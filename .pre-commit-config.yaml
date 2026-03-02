@@ -35,7 +35,7 @@ repos:
   - id: pymarkdown
     files: docs/.*
 - repo: https://github.com/rhysd/actionlint
-  rev: v1.7.7
+  rev: v1.7.11
   hooks:
   - id: actionlint
 - repo: local
