@@ -97,7 +97,7 @@ dill==0.3.8
     #   evaluate
     #   lm-eval
     #   multiprocess
-dnspython==2.7.0
+dnspython==2.8.0
     # via email-validator
 docutils==0.16
     # via awscli
