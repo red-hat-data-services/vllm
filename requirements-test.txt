@@ -73,7 +73,7 @@ colorama==0.4.6
     #   tqdm-multiprocess
 contourpy==1.3.0
     # via matplotlib
-cupy-cuda12x==13.3.0
+cupy-cuda12x==13.6.0
     # via ray
 cycler==0.12.1
     # via matplotlib
