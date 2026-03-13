@@ -46,11 +46,11 @@ gpgkey=https://repo.radeon.com/rocm/rocm.gpg.key" > /etc/yum.repos.d/amdgpu.repo
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
+    export ROCM_SHORT="$(echo $ROCM_VERSION | awk -F. '{print $1"."$2}')" && \
     uv pip install --pre \
-        --index-url "https://download.pytorch.org/whl/nightly/rocm${ROCM_VERSION}" \
-        torch==2.6.0.dev20241209+rocm${ROCM_VERSION} \
-        torchvision==0.20.0.dev20241209+rocm${ROCM_VERSION} && \
-    # Install libdrm-amdgpu to avoid errors when retrieving device information (amdgpu.ids: No such file or directory)
+        --index-url "https://download.pytorch.org/whl/nightly/rocm${ROCM_SHORT}" \
+        "torch==2.6.0.dev20241122+rocm${ROCM_SHORT}" \
+        "torchvision==0.20.0.dev20241206+rocm${ROCM_SHORT}" && \
     microdnf install -y libdrm-amdgpu && \
     microdnf clean all
 
