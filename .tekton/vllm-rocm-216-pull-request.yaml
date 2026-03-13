@@ -16,6 +16,9 @@ metadata:
   name: vllm-rocm-216-on-pull-request
   namespace: rhoai-tenant
 spec:
+  timeouts:
+    pipeline: 9h
+    tasks: 6h
   params:
   - name: git-url
     value: '{{source_url}}'
@@ -48,6 +51,23 @@ spec:
     - linux-extra-fast/amd64
   - name: rhoai-version
     value: "2.16.4"
+  taskRunSpecs:
+  - pipelineTaskName: ecosystem-cert-preflight-checks
+    computeResources:
+      requests:
+        cpu: '8'
+        memory: 16Gi
+      limits:
+        cpu: '16'
+        memory: 32Gi
+  - pipelineTaskName: clair-scan
+    computeResources:
+      requests:
+        cpu: '8'
+        memory: 16Gi
+      limits:
+        cpu: '16'
+        memory: 32Gi
   pipelineRef:
     resolver: git
     params:
