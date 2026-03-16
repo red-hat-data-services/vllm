@@ -154,7 +154,10 @@ RUN --mount=type=cache,target=/root/.cache/ccache \
     --mount=type=cache,target=/root/.cache/uv \
     uv pip install -v -U \
         ninja setuptools-scm>=8 "cmake>=3.26" packaging && \
-    env CFLAGS="-march=haswell" \
+    # Set CMAKE_POLICY_VERSION_MINIMUM to work around ROCm 6.2.4 hiprtc-config.cmake
+    # requiring VERSION <3.5, which is unsupported by CMake >=3.27
+    env CMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        CFLAGS="-march=haswell" \
         CXXFLAGS="$CFLAGS $CXXFLAGS" \
         CMAKE_BUILD_TYPE=Release \
     python3 setup.py bdist_wheel --dist-dir=dist
