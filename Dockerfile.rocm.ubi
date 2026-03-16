@@ -46,10 +46,10 @@ gpgkey=https://repo.radeon.com/rocm/rocm.gpg.key" > /etc/yum.repos.d/amdgpu.repo
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --pre \
-        --index-url "https://download.pytorch.org/whl/nightly/rocm${ROCM_VERSION}" \
-        torch==2.6.0.dev20241209+rocm${ROCM_VERSION} \
-        torchvision==0.20.0.dev20241209+rocm${ROCM_VERSION} && \
+    uv pip install \
+        --index-url "https://download.pytorch.org/whl/rocm${ROCM_VERSION}" \
+        torch==2.6.0+rocm${ROCM_VERSION} \
+        torchvision==0.21.0+rocm${ROCM_VERSION} && \
     # Install libdrm-amdgpu to avoid errors when retrieving device information (amdgpu.ids: No such file or directory)
     microdnf install -y libdrm-amdgpu && \
     microdnf clean all
@@ -204,10 +204,9 @@ RUN --mount=type=bind,from=build_amdsmi,src=/install,target=/install/amdsmi/ \
     --mount=type=bind,from=build_vllm,src=/workspace/dist,target=/install/vllm/ \
     --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
-    export version="$(awk -F. '{print $1"."$2}' <<< $ROCM_VERSION)" && \
     uv pip install \
         --index-strategy=unsafe-best-match \
-        --extra-index-url "https://download.pytorch.org/whl/nightly/rocm${version}" \
+        --extra-index-url "https://download.pytorch.org/whl/rocm${ROCM_VERSION}" \
         /install/amdsmi/*.whl\
         /install/flashattention/*.whl\
         /install/vllm/*.whl \
