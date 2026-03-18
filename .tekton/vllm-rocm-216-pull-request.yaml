@@ -52,6 +52,16 @@ spec:
   - name: rhoai-version
     value: "2.16.4"
   taskRunSpecs:
+  - pipelineTaskName: build-images
+    computeResources:
+      requests:
+        cpu: '12'
+        memory: 32Gi
+        ephemeral-storage: 130Gi
+      limits:
+        cpu: '16'
+        memory: 64Gi
+        ephemeral-storage: 150Gi
   - pipelineTaskName: ecosystem-cert-preflight-checks
     computeResources:
       requests:
