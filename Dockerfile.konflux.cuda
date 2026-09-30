@@ -1,9 +1,5 @@
-## Global Args #################################################################
-ARG RHAIIS_VERSION=3.2.2-1772160593
-
-
 ## Base Layer ##################################################################
-FROM registry.redhat.io/rhaiis/vllm-cuda-rhel9:${RHAIIS_VERSION} as vllm-grpc-adapter
+FROM registry.redhat.io/rhaiis/vllm-cuda-rhel9:3.2.2-1772160593@sha256:58052dab450567ab6c8a312fc66323e8e22f17da00f6a7877dd6ad3f0957212c as vllm-grpc-adapter
 
 
 ENV GRPC_PORT=8033 \
