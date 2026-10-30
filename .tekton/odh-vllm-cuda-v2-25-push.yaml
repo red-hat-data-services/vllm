@@ -34,7 +34,7 @@ spec:
     value:
     - '{{target_branch}}-{{revision}}'
   - name: rhoai-version
-    value: "2.25.12"
+    value: "2.25.13"
   - name: dockerfile
     value: Dockerfile.konflux.cuda
   - name: path-context
@@ -82,4 +82,3 @@ spec:
     secret:
       secretName: '{{ git_auth_secret }}'
 status: {}
-#restart
