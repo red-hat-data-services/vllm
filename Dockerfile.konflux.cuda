@@ -1,5 +1,5 @@
 ## Base Layer ##################################################################
-FROM registry.redhat.io/rhaiis/vllm-cuda-rhel9:3.2.2-1793961309@sha256:005a8305b6b4af1500597370bf9d8b160950feeb4bbdc55c2cf9bd7e39d5c2ce as vllm-grpc-adapter
+FROM registry.redhat.io/rhaiis/vllm-cuda-rhel9:3.2.2-1795453721@sha256:b17400ca8c3a0acd1ed52a9e6fbdd18071841ce47670bc29b48587628cb85202 as vllm-grpc-adapter
 
 
 ENV GRPC_PORT=8033 \
