@@ -35,7 +35,7 @@ spec:
     value:
     - '{{target_branch}}-{{revision}}'
   - name: rhoai-version
-    value: "2.25.13"
+    value: "2.25.14"
   - name: dockerfile
     value: Dockerfile.konflux.cuda
   - name: path-context
